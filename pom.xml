@@ -1,0 +1,179 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>ar.gde.interoperabilidad</groupId>
+  <artifactId>registry-web</artifactId>
+  <version>1.0.0</version>
+  <packaging>war</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+  </properties>
+
+  <dependencies>
+    <!-- === 1) ZK 8 CE desde Maven Central === -->
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zk</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zul</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zkplus</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <!-- zcommon sí existe en Maven Central bajo org.zkoss.common -->
+      <groupId>org.zkoss.common</groupId>
+      <artifactId>zcommon</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zhtml</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zkbind</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <!-- zweb también está en Central bajo org.zkoss.common -->
+      <groupId>org.zkoss.common</groupId>
+      <artifactId>zweb</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <!-- zk-bootstrap en Central bajo org.zkoss.addons -->
+      <groupId>org.zkoss.addons</groupId>
+      <artifactId>zk-bootstrap</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    <dependency>
+      <!-- zk-user-model-list en Central bajo org.zkoss.userlist -->
+      <groupId>org.zkoss.userlist</groupId>
+      <artifactId>zk-user-model-list</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+
+    <!-- === 2) ZK-Spring desde Maven Central === -->
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zkspring-core</artifactId>
+      <version>3.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zkspring-security</artifactId>
+      <version>3.2.0</version>
+    </dependency>
+
+    <!-- === 3) Spring Framework (Central) === -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>3.2.3.RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>3.2.3.RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>3.2.3.RELEASE</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-jdbc</artifactId>
+      <version>3.2.3.RELEASE</version>
+    </dependency>
+
+    <!-- === 4) Oracle JDBC (ojdbc7) – JAR local, si lo necesitas === -->
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>ojdbc7</artifactId>
+      <version>12.1.0.2</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/ojdbc7.jar</systemPath>
+    </dependency>
+
+    <!-- === 5) Servlet API (proveído por Tomcat) === -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.0.1</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- === 6) JAX-RS / Jersey (si corresponde) === -->
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-client</artifactId>
+      <version>2.35</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.inject</groupId>
+      <artifactId>jersey-hk2</artifactId>
+      <version>2.35</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-server</artifactId>
+      <version>1.19</version>
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-servlet</artifactId>
+      <version>1.19</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>jsr311-api</artifactId>
+      <version>1.1.1</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>registry-web</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
+        <configuration>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.tomcat.maven</groupId>
+        <artifactId>tomcat7-maven-plugin</artifactId>
+        <version>2.2</version>
+        <configuration>
+          <path>/registry-web</path>
+          <port>8080</port>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

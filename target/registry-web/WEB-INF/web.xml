@@ -1,0 +1,59 @@
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                             http://xmlns.jcp.org/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+
+  <welcome-file-list>
+    <welcome-file>panelPrincipal.zul</welcome-file>
+  </welcome-file-list>
+
+  <!-- ZK Servlet para *.zul -->
+  <servlet>
+    <servlet-name>zkLoader</servlet-name>
+    <servlet-class>org.zkoss.zk.ui.http.DHtmlLayoutServlet</servlet-class>
+    <init-param>
+      <param-name>update-uri</param-name>
+      <param-value>/zkau</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet>
+    <servlet-name>zkUpdate</servlet-name>
+    <servlet-class>org.zkoss.zk.ui.http.DHtmlUpdateServlet</servlet-class>
+    <load-on-startup>2</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>zkLoader</servlet-name>
+    <url-pattern>*.zul</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>zkUpdate</servlet-name>
+    <url-pattern>/zkau/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- Jersey Servlet para /api/v1/* -->
+  <servlet>
+    <servlet-name>JerseyServlet</servlet-name>
+    <servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
+    <init-param>
+      <param-name>com.sun.jersey.config.property.packages</param-name>
+      <param-value>ar.gde.interoperabilidad.registry.restful</param-value>
+    </init-param>
+    <load-on-startup>3</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>JerseyServlet</servlet-name>
+    <url-pattern>/api/v1/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- Spring ContextLoaderListener -->
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>/WEB-INF/spring-beans.xml</param-value>
+  </context-param>
+
+</web-app>

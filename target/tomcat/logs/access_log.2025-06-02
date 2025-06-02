@@ -1,0 +1,7 @@
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:12 -0300] "GET /registry-web/panelPrincipal.zul HTTP/1.1" 500 2659 http-bio-8080-exec-1 173
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:12 -0300] "GET /registry-web/panelPrincipal.zul HTTP/1.1" 500 1923 http-bio-8080-exec-2 32
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:13 -0300] "GET /registry-web/panelPrincipal.zul HTTP/1.1" 500 1923 http-bio-8080-exec-3 18
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:14 -0300] "GET /registry-web/panelPrincipal.zul HTTP/1.1" 500 1923 http-bio-8080-exec-4 14
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:17 -0300] "GET /registry-web HTTP/1.1" 302 - http-bio-8080-exec-5 0
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:17 -0300] "GET /registry-web/ HTTP/1.1" 500 1923 http-bio-8080-exec-6 24
+0:0:0:0:0:0:0:1 - - [02/Jun/2025:15:05:19 -0300] "GET /registry-web/ HTTP/1.1" 500 1923 http-bio-8080-exec-7 20

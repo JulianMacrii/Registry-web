@@ -3,7 +3,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>ar.gde.interoperabilidad</groupId>
   <artifactId>registry-web</artifactId>
   <version>1.0.0</version>
@@ -16,7 +15,9 @@
   </properties>
 
   <dependencies>
-    <!-- 1) ZK 8 Core -->
+    <!-- ========================= -->
+    <!-- 1) ZK 8 Core + Add-ons  -->
+    <!-- ========================= -->
     <dependency>
       <groupId>org.zkoss.zk</groupId>
       <artifactId>zk</artifactId>
@@ -33,7 +34,7 @@
       <version>8.0.2.2</version>
     </dependency>
 
-    <!-- 2) ZK Common libraries (zcommon & zweb) -->
+    <!-- ZK Common -->
     <dependency>
       <groupId>org.zkoss.common</groupId>
       <artifactId>zcommon</artifactId>
@@ -45,35 +46,35 @@
       <version>8.0.2.2</version>
     </dependency>
 
-    <!-- 3) ZK HTML (note: using version 9.6.0.2 as in Nexus) -->
+    <!-- ZK HTML (versión 9.6.0.2) -->
     <dependency>
       <groupId>org.zkoss.zk</groupId>
       <artifactId>zhtml</artifactId>
       <version>9.6.0.2</version>
     </dependency>
 
-    <!-- 4) ZK Bind -->
+    <!-- ZK Bind -->
     <dependency>
       <groupId>org.zkoss.zk</groupId>
       <artifactId>zkbind</artifactId>
       <version>8.0.2.2</version>
     </dependency>
 
-    <!-- 5) zk-bootstrap addon -->
+    <!-- zk-bootstrap add-on -->
     <dependency>
       <groupId>org.zkoss.addons</groupId>
       <artifactId>zk-bootstrap</artifactId>
       <version>1.0.0</version>
     </dependency>
 
-    <!-- 6) zk-user-model-list (coord. from Nexus) -->
+    <!-- zk-user-model-list -->
     <dependency>
       <groupId>ar.gob.zk-user-model-list</groupId>
       <artifactId>zk-user-model-list</artifactId>
       <version>1.0.1</version>
     </dependency>
 
-    <!-- 7) ZK Spring integration -->
+    <!-- ZK-Spring integration -->
     <dependency>
       <groupId>org.zkoss.zk</groupId>
       <artifactId>zkspring-core</artifactId>
@@ -85,7 +86,10 @@
       <version>3.2.0</version>
     </dependency>
 
-    <!-- 8) Spring Framework -->
+
+    <!-- ========================= -->
+    <!-- 2) Spring Framework       -->
+    <!-- ========================= -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
@@ -107,13 +111,20 @@
       <version>3.2.3.RELEASE</version>
     </dependency>
 
-    <!-- 9) JAX-RS / Jersey dependencies -->
+
+    <!-- ===================================== -->
+    <!-- 3) JAX-RS / Jersey (con exclusiones)  -->
+    <!-- ===================================== -->
+
+    <!-- b) Solo las interfaces JAX-RS -->
     <dependency>
       <groupId>javax.ws.rs</groupId>
       <artifactId>javax.ws.rs-api</artifactId>
       <version>2.1.1</version>
-      <!-- sólo definiciones de interfaz, no trae servlet-api -->
+      <!-- No aporta servlet-api, son solo interfaces. -->
     </dependency>
+
+    <!-- Jersey 2.x client y HK2 (no traen servlet-api) -->
     <dependency>
       <groupId>org.glassfish.jersey.core</groupId>
       <artifactId>jersey-client</artifactId>
@@ -125,30 +136,35 @@
       <version>2.35</version>
     </dependency>
 
-    <!-- 9a) Jersey 1.x servlet bits, marcado provided para evitar inclusión de servlet-api -->
+    <!-- Jersey 1.x (server + servlet), ⚠ IMPORTANTE: marcamos PROVIDED y excluimos servlet-api -->
     <dependency>
       <groupId>com.sun.jersey</groupId>
       <artifactId>jersey-server</artifactId>
       <version>1.19</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.jersey</groupId>
-      <artifactId>jersey-servlet</artifactId>
-      <version>1.19</version>
-      <scope>provided</scope>
-      <!--
-      Alternativamente, si prefieres no usar provided, puedes excluir servlet-api así:
       <exclusions>
         <exclusion>
           <groupId>javax.servlet</groupId>
           <artifactId>servlet-api</artifactId>
         </exclusion>
       </exclusions>
-      -->
+    </dependency>
+    <dependency>
+      <groupId>com.sun.jersey</groupId>
+      <artifactId>jersey-servlet</artifactId>
+      <version>1.19</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
-    <!-- 10) Servlet API (solo para compilación; no se empaqueta en WAR) -->
+    <!-- ============= -->
+    <!-- 4) Servlet API -->
+    <!-- ============= -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
@@ -156,13 +172,16 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- 11) Oracle JDBC driver (ojdbc7) en sistema si no existe en Nexus -->
+
+    <!-- ================================ -->
+    <!-- 5) Oracle JDBC driver (ojdbc7) -->
+    <!-- ================================ -->
+    <!-- Lo instalaste en tu repositorio local, así que ya no hace falta <scope>system</scope> apuntando dentro de tu proyecto -->
     <dependency>
       <groupId>com.oracle</groupId>
       <artifactId>ojdbc7</artifactId>
       <version>12.1.0.2</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/src/main/webapp/WEB-INF/lib/ojdbc7.jar</systemPath>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

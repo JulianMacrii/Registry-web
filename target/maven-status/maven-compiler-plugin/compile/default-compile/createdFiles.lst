@@ -1,7 +1,5 @@
-ar\gde\interoperabilidad\registry\composer\ABMEcosistemaComposer.class
 ar\gde\interoperabilidad\registry\service\impl\GrupoServiceImpl.class
 ar\gde\interoperabilidad\registry\zk\ABMGrupoComposer.class
-ar\gde\interoperabilidad\registry\service\EcosistemaServiceImpl.class
 ar\gde\interoperabilidad\registry\composer\PanelPrincipalComposer.class
 ar\gde\interoperabilidad\registry\restful\RegistryService.class
 ar\gde\interoperabilidad\registry\service\EcosistemaService.class

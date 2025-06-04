@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zk xmlns:n="native"
+    viewModel="@id('vm') @init('ar.gde.interoperabilidad.registry.zk.ABMGrupoComposer')">
+  
+  <!-- Ventana principal sin height, usando vflex="1" -->
+  <window id="winABMGrupo"
+          border="normal"
+          title="Administración de Grupos"
+          width="80%"
+          vflex="1">
+
+    <vlayout width="100%" vflex="1" spacing="5px">
+      <!-- Título de la lista como label normal -->
+      <label value="Lista de Grupos"
+             style="font-weight:bold; font-size:14px;" />
+
+      <grid id="gridGrupos"
+            mold="paging"
+            pageSize="10"
+            vflex="1">
+        <columns menupopup="auto">
+          <column label="ID"               width="60px"/>
+          <column label="Nombre"           width="200px"/>
+          <column label="Estado"           width="100px"/>
+          <column label="Fecha Creación"   width="140px"/>
+          <column label="Fecha Modificación" width="140px"/>
+          <column label="Usuario Creación" width="120px"/>
+          <column label="Usuario Modificación" width="120px"/>
+          <column label="Acciones"         width="180px"/>
+        </columns>
+        <rows>
+          <template name="model" var="each">
+            <row>
+              <label value="${each['id']}"/>
+              <label value="${each['nombre']}"/>
+              <label value="${each['estado']}"/>
+              <label value="${each['fechaCreacion']}"/>
+              <label value="${each['fechaModificacion']}"/>
+              <label value="${each['usuarioCreacion']}"/>
+              <label value="${each['usuarioModificacion']}"/>
+              <hlayout spacing="4px">
+                <button id="btnVerG"
+                        label="Ver"
+                        image="/imgs/view.png"
+                        onClick="@command('verGrupo', item=each)"/>
+                <button id="btnEditarG"
+                        label="Editar"
+                        image="/imgs/edit.png"
+                        onClick="@command('editarGrupo', item=each)"/>
+                <button id="btnBajaG"
+                        label="Baja"
+                        visible="${each['estado']=='ACTIVO'}"
+                        image="/imgs/delete.png"
+                        onClick="@command('bajaGrupo', item=each)"/>
+                <button id="btnAltaG"
+                        label="Alta"
+                        visible="${each['estado']=='INACTIVO'}"
+                        image="/imgs/activate.png"
+                        onClick="@command('altaGrupo', item=each)"/>
+              </hlayout>
+            </row>
+          </template>
+        </rows>
+      </grid>
+    </vlayout>
+
+    <!-- Ventana “Ver Grupo” -->
+    <window id="winVerGrupo"
+            title="Detalles de Grupo"
+            border="normal"
+            width="500px"
+            closable="true"
+            visible="false"
+            position="center"
+            mode="modal">
+      <grid width="100%">
+        <columns>
+          <column label="Campo" width="150px"/>
+          <column label="Valor"  width="*"/>
+        </columns>
+        <rows>
+          <row>
+            <label value="Nombre"/>
+            <textbox id="txtNombreVerG" readonly="true"/>
+          </row>
+          <row>
+            <label value="Descripción"/>
+            <textbox id="txtDescripcionVerG" readonly="true"/>
+          </row>
+          <row>
+            <label value="Estado"/>
+            <textbox id="txtEstadoVerG" readonly="true"/>
+          </row>
+          <row>
+            <label value="Fecha Creación"/>
+            <textbox id="txtFechaCreacionVerG" readonly="true"/>
+          </row>
+          <row>
+            <label value="Fecha Modificación"/>
+            <textbox id="txtFechaModVerG" readonly="true"/>
+          </row>
+          <row>
+            <label value="Usuario Creación"/>
+            <textbox id="txtUserCrearVerG" readonly="true"/>
+          </row>
+          <row>
+            <label value="Usuario Modificación"/>
+            <textbox id="txtUserModVerG" readonly="true"/>
+          </row>
+        </rows>
+      </grid>
+      <button label="Cerrar" onClick="winVerGrupo.onClose()"/>
+    </window>
+
+    <!-- Ventana “Editar Grupo” -->
+    <window id="winEditGrupo"
+            title="Editar Grupo"
+            border="normal"
+            width="500px"
+            closable="true"
+            visible="false"
+            position="center"
+            mode="modal">
+      <grid width="100%">
+        <columns>
+          <column label="Campo" width="150px"/>
+          <column label="Valor"  width="*"/>
+        </columns>
+        <rows>
+          <row>
+            <label value="Nombre"/>
+            <textbox id="txtNombreEditG"/>
+          </row>
+          <row>
+            <label value="Descripción"/>
+            <textbox id="txtDescripcionEditG"/>
+          </row>
+          <row>
+            <label value="Estado"/>
+            <combobox id="cmbEstadoEditG">
+              <comboitem label="ACTIVO"/>
+              <comboitem label="INACTIVO"/>
+            </combobox>
+          </row>
+        </rows>
+      </grid>
+      <hlayout spacing="4px">
+        <button id="btnGuardarEditG"
+                label="Guardar"
+                image="/imgs/save.png"
+                onClick="@command('guardarGrupo')"/>
+        <button label="Cancelar" onClick="winEditGrupo.onClose()"/>
+      </hlayout>
+    </window>
+  </window>
+</zk>

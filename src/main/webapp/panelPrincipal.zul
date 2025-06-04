@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zk xmlns:n="native">
-  <window id="winMain" border="normal" title="Registro de Ecosistemas Interoperabilidad" width="100%" height="100%">
-    <div hflex="1" vflex="1">
-      <tabs id="tabs" selectedIndex="0">
+  <window id="winMain"
+          border="normal"
+          title="Registro de Ecosistemas Interoperabilidad"
+          width="100%"
+          height="100%">
+    <tabbox hflex="1" vflex="1">
+      <tabs>
         <tab label="Administración de Ecosistemas"/>
         <tab label="Administración de Grupos"/>
       </tabs>
       <tabpanels>
         <tabpanel>
-          <zk include src="/zk/abm/ABMEcosistema.zul"/>
+          <include src="/zk/abm/ABMEcosistema.zul"/>
         </tabpanel>
         <tabpanel>
-          <zk include src="/zk/abm/ABMGrupo.zul"/>
+          <include src="/zk/abm/ABMGrupo.zul"/>
         </tabpanel>
       </tabpanels>
-    </div>
+    </tabbox>
   </window>
 </zk>

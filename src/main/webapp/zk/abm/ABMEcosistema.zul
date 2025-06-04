@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<zk xmlns:n="native"
-    xmlns="http://www.zkoss.org/2005/zul"
+<zk xmlns="http://www.zkoss.org/2005/zul"
+    xmlns:n="native"
     viewModel="@id('vm') @init('ar.gde.interoperabilidad.registry.zk.ABMEcosistemaComposer')">
 
+  <!-- =============================== -->
+  <!-- 1) ESTILOS GLOBALES            -->
+  <!-- =============================== -->
   <style>
     .smallImage {
       max-width: 150px;
@@ -12,96 +15,145 @@
     .modalRow {
       padding-bottom: 6px;
     }
+    .btnSmall {
+      padding: 2px 6px;
+      font-size: 12px;
+    }
+    .btnSmall img {
+      max-width: 16px;
+      max-height: 16px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    .btnSmall .z-button-text {
+      vertical-align: middle;
+    }
   </style>
 
+  <!-- ================================================= -->
+  <!-- 2) VENTANA PRINCIPAL: “Administración de Ecosistemas” -->
+  <!-- ================================================= -->
   <window id="winABMEcosistema"
           border="normal"
-          width="95%"
           title="Administración de Ecosistemas"
+          width="95%"
           vflex="1">
 
     <vlayout width="100%" vflex="1" spacing="5px">
+
+      <!-- 2.1) Etiqueta de título de la sección (opcional) -->
       <label value="Lista de Ecosistemas"
              style="font-weight:bold; font-size:14px;" />
 
-      <hbox width="100%" pack="end" style="padding-bottom:4px;">
-        <button id="btnAgregarEco"
-                label="Agregar Ecosistema"
-                image="/imgs/add.png"
-                onClick="@command('agregarEcosistema')" />
+      <!-- 2.2) Grilla paginada de ecosistemas -->
+	<grid id="gridEcosistemas"
+	      mold="paging"
+	      pageSize="10"
+	      vflex="1"
+	      emptyMessage="No hay Ecosistemas cargados."
+	      model="@load(vm.listaEcosistemas)">
+	
+	  <!-- ─── 1) AUXHEAD que ocupa las 8 columnas ─── -->
+	  <auxhead>
+	    <!-- colspan="8" porque tienes 8 columnas en total -->
+	    <auxheader colspan="8">
+	      <hbox width="100%" pack="end" style="padding:4px 0px;">
+	        <button
+	          id="btnAgregarEco"
+	          class="btnSmall"
+	          label="Agregar Ecosistema"
+	          image="/imgs/add.png"
+	          onClick="@command('agregarEcosistema')" />
+	      </hbox>
+	    </auxheader>
+	  </auxhead>
+	
+	  <!-- ─── 2) Definición de las columnas ─── -->
+	  <columns menupopup="auto">
+	    <column label="Nombre"           sort="auto" width="120px"/>
+	    <column label="Descripción"      sort="auto" width="200px"/>
+	    <column label="Estado"           sort="auto" width="80px"/>
+	    <column label="Fecha Creación"   sort="auto" width="140px"/>
+	    <column label="Fecha Mod."       sort="auto" width="140px"/>
+	    <column label="Usuario Creación" sort="auto" width="120px"/>
+	    <column label="Usuario Mod."     sort="auto" width="120px"/>
+	    <column label="Acciones"         width="200px" align="center"/>
+	  </columns>
+	
+	  <!-- ─── 3) Filas (rows) ─── -->
+	  <rows>
+	    <template name="model" var="each">
+	      <row>
+	        <label value="@load(each['nombre'])"/>
+	        <label value="@load(each['descripcionEcosistema'])"/>
+	        <label value="@load(each['estado'])"/>
+	        <label value="@load(each['fechaCreacion'])"/>
+	        <label value="@load(each['fechaModificacion'])"/>
+	        <label value="@load(each['usuarioCreacion'])"/>
+	        <label value="@load(each['usuarioModificacion'])"/>
+	
+	        <hbox spacing="4px">
+	          <button class="btnSmall"
+	                  label="Ver"
+	                  image="/imgs/view.png"
+	                  onClick="@command('verEcosistema', item=each)"/>
+	
+	          <button class="btnSmall"
+	                  label="Probar"
+	                  image="/imgs/test.png"
+	                  onClick="@command('probarEcosistema', item=each)"/>
+	
+	          <button class="btnSmall"
+	                  label="Editar"
+	                  image="/imgs/edit.png"
+	                  onClick="@command('editarEcosistema', item=each)"/>
+	
+	          <button class="btnSmall"
+	                  label="Baja"
+	                  image="/imgs/delete.png"
+	                  visible="@load(each['estado'] eq 'ACTIVO')"
+	                  onClick="@command('bajaEcosistema', item=each)"/>
+	
+	          <button class="btnSmall"
+	                  label="Alta"
+	                  image="/imgs/activate.png"
+	                  visible="@load(each['estado'] eq 'INACTIVO')"
+	                  onClick="@command('altaEcosistema', item=each)"/>
+	        </hbox>
+	      </row>
+	    </template>
+	  </rows>
+	
+	</grid>
+
+      <!-- 2.3) Ya no hace falta el hbox extra con el botón aquí abajo -->
+      <!--
+      <hbox width="100%" pack="end" style="padding-top:6px;">
+        <button
+          id="btnAgregarEco"
+          class="btnSmall"
+          label="Agregar Ecosistema"
+          image="/imgs/add.png"
+          onClick="@command('agregarEcosistema')" />
       </hbox>
-
-      <grid id="gridEcosistemas"
-            mold="paging"
-            pageSize="10"
-            vflex="1"
-            emptyMessage="No hay Ecosistemas cargados."
-            model="@load(vm.listaEcosistemas)">
-        <columns menupopup="auto">
-          <column label="Nombre"           sort="auto" width="120px"/>
-          <column label="Descripción"      sort="auto" width="200px"/>
-          <column label="Estado"           sort="auto" width="80px"/>
-          <column label="Fecha Creación"   sort="auto" width="140px"/>
-          <column label="Fecha Mod."       sort="auto" width="140px"/>
-          <column label="Usuario Creación" sort="auto" width="120px"/>
-          <column label="Usuario Mod."     sort="auto" width="120px"/>
-          <column label="Acciones"         width="200px" align="center"/>
-        </columns>
-        <rows>
-          <template name="model" var="each">
-            <row>
-              <label value="@load(each['nombre'])"/>
-              <label value="@load(each['descripcionEcosistema'])"/>
-              <label value="@load(each['estado'])"/>
-              <label value="@load(each['fechaCreacion'])"/>
-              <label value="@load(each['fechaModificacion'])"/>
-              <label value="@load(each['usuarioCreacion'])"/>
-              <label value="@load(each['usuarioModificacion'])"/>
-
-              <hbox spacing="4px">
-                <button id="btnVer"
-                        label="Ver"
-                        image="/imgs/view.png"
-                        onClick="@command('verEcosistema', item=each)"/>
-
-                <button id="btnProbar"
-                        label="Probar"
-                        image="/imgs/test.png"
-                        onClick="@command('probarEcosistema', item=each)"/>
-
-                <button id="btnEditar"
-                        label="Editar"
-                        image="/imgs/edit.png"
-                        onClick="@command('editarEcosistema', item=each)"/>
-
-                <button id="btnBaja"
-                        label="Baja"
-                        image="/imgs/delete.png"
-                        visible="@load(each['estado'] eq 'ACTIVO')"
-                        onClick="@command('bajaEcosistema', item=each)"/>
-
-                <button id="btnAlta"
-                        label="Alta"
-                        image="/imgs/activate.png"
-                        visible="@load(each['estado'] eq 'INACTIVO')"
-                        onClick="@command('altaEcosistema', item=each)"/>
-              </hbox>
-            </row>
-          </template>
-        </rows>
-      </grid>
+      -->
 
     </vlayout>
   </window>
+  <!-- ========== FIN VENTANA PRINCIPAL ========== -->
 
+
+  <!-- ============================================= -->
+  <!-- 3) POP-UP: “Ver Detalle de Ecosistema”        -->
+  <!-- ============================================= -->
   <window id="winVerEcosistema"
           title="Detalles de Ecosistema"
           border="normal"
           width="600px"
           closable="true"
-          visible="@bind(vm.mostrarVer)"
+          mode="modal"
           position="center"
-          mode="modal">
+          visible="false">
 
     <grid width="100%">
       <columns>
@@ -169,14 +221,18 @@
     </hbox>
   </window>
 
+
+  <!-- ============================================= -->
+  <!-- 4) POP-UP: “Editar Ecosistema”                -->
+  <!-- ============================================= -->
   <window id="winEditEcosistema"
           title="Editar Ecosistema"
           border="normal"
           width="600px"
           closable="true"
-          visible="@bind(vm.mostrarEditar)"
+          mode="modal"
           position="center"
-          mode="modal">
+          visible="false">
 
     <grid width="100%">
       <columns>
@@ -226,14 +282,18 @@
     </hbox>
   </window>
 
+
+  <!-- ============================================= -->
+  <!-- 5) POP-UP: “Agregar Ecosistema”                -->
+  <!-- ============================================= -->
   <window id="winAddEcosistema"
           title="Agregar Ecosistema"
           border="normal"
           width="600px"
           closable="true"
-          visible="@bind(vm.mostrarAgregar)"
+          mode="modal"
           position="center"
-          mode="modal">
+          visible="false">
 
     <grid width="100%">
       <columns>

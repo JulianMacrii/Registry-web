@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<zk xmlns:n="native">
+<zk xmlns="http://www.zkoss.org/2005/zul"
+    xmlns:n="native">
   <window id="winMain"
           border="normal"
           title="Registro de Ecosistemas Interoperabilidad"

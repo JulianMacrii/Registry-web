@@ -6,12 +6,13 @@ import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.util.Clients;
-import org.zkoss.zul.*;
 import org.zkoss.zk.ui.event.ForwardEvent;
+import org.zkoss.zul.*;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.client.Entity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,22 +24,30 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
     private Grid gridGrupos;
     private ListModelList<Map<String, Object>> gruposModel;
 
-    // Ventanas / Campos
+    // Ventanas y campos para “Agregar” y “Editar”
     @Wire
-    private Window winVerGrupo;
+    private Window winAddGrupo;
     @Wire
     private Window winEditGrupo;
-    @Wire
-    private Textbox txtNombreVerG, txtDescripcionVerG, txtEstadoVerG,
-                    txtFechaCreacionVerG, txtFechaModVerG,
-                    txtUserCrearVerG, txtUserModVerG;
 
+    // Campos “Agregar Grupo”
     @Wire
-    private Textbox txtNombreEditG, txtDescripcionEditG;
+    private Textbox txtNombreAddG;
+    @Wire
+    private Textbox txtDescAddG;
+    @Wire
+    private Combobox cmbEstadoAddG;
+
+    // Campos “Editar Grupo”
+    @Wire
+    private Textbox txtNombreEditG;
+    @Wire
+    private Textbox txtDescEditG;
     @Wire
     private Combobox cmbEstadoEditG;
-    @Wire
-    private Button btnGuardarEditG;
+
+    // Id del grupo que se está editando
+    private Long idGrupoEnEdicion;
 
     // URL base del servicio REST
     private final String BASE_URL = "http://localhost:8080/registry-web/api/v1";
@@ -51,7 +60,7 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
     }
 
     /**
-     * Llama al REST GET /grupos y carga la grilla.
+     * 1) Cargar la grilla con GET /grupos
      */
     private void cargarGrillaGrupos() {
         WebTarget t = jaxClient.target(BASE_URL).path("grupos");
@@ -62,27 +71,48 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
     }
 
     /**
-     * Mostrar ventana “Ver Grupo” y cargar los datos.
+     * 2) Abrir ventana “Agregar Grupo”
      */
-    @Listen("onClick = button#btnVerG")
-    public void verGrupo(ForwardEvent evt) {
-        Row fila = (Row) evt.getOrigin().getTarget().getParent().getParent();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> datos = (Map<String, Object>) fila.getValue();
-
-        txtNombreVerG.setValue((String) datos.get("nombre"));
-        txtDescripcionVerG.setValue((String) datos.get("descripcionGrupo"));
-        txtEstadoVerG.setValue((String) datos.get("estado"));
-        txtFechaCreacionVerG.setValue((String) datos.get("fechaCreacion"));
-        txtFechaModVerG.setValue((String) datos.get("fechaModificacion"));
-        txtUserCrearVerG.setValue((String) datos.get("usuarioCreacion"));
-        txtUserModVerG.setValue((String) datos.get("usuarioModificacion"));
-
-        winVerGrupo.doModal();
+    @Listen("onClick = button#btnAbrirAddG")
+    public void abrirAgregarGrupo() {
+        // Limpiar campos antes de mostrar
+        txtNombreAddG.setValue("");
+        txtDescAddG.setValue("");
+        cmbEstadoAddG.setValue("");
+        winAddGrupo.doModal();
     }
 
     /**
-     * Botón “Dar de baja” → DELETE /grupos/{id}
+     * 3) Guardar nuevo grupo → POST /grupos
+     */
+    @Listen("onClick = button#btnGuardarAddG")
+    public void guardarNuevoGrupo() {
+        String nombre = txtNombreAddG.getValue().trim();
+        String descripcion = txtDescAddG.getValue().trim();
+        String estado = cmbEstadoAddG.getValue();
+
+        if (nombre.isEmpty() || estado == null || estado.isEmpty()) {
+            Clients.showNotification("El nombre y estado son obligatorios.", "warning", null, "top_center", 2000);
+            return;
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("nombre", nombre);
+        payload.put("descripcionGrupo", descripcion);
+        payload.put("estado", estado);
+        payload.put("usuarioCreacion", "USUARIO_LOGUEADO");
+
+        WebTarget t = jaxClient.target(BASE_URL).path("grupos");
+        t.request()
+         .post(Entity.json(payload));
+
+        Clients.showNotification("Grupo creado correctamente.", "success", null, "top_center", 2000);
+        winAddGrupo.onClose();
+        cargarGrillaGrupos();
+    }
+
+    /**
+     * 4) Dar de baja un grupo → DELETE /grupos/{id}
      */
     @Listen("onClick = button#btnBajaG")
     public void bajaGrupo(ForwardEvent evt) {
@@ -91,9 +121,7 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
         Map<String, Object> datos = (Map<String, Object>) fila.getValue();
         Long idGrupo = ((Number) datos.get("id")).longValue();
 
-        WebTarget t = jaxClient.target(BASE_URL)
-                               .path("grupos")
-                               .path(String.valueOf(idGrupo));
+        WebTarget t = jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(idGrupo));
         t.request().delete();
 
         Clients.showNotification("Grupo dado de baja.", "info", null, "top_center", 2000);
@@ -101,7 +129,7 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
     }
 
     /**
-     * Botón “Dar de alta” → POST /grupos/{id}/alta
+     * 5) Dar de alta un grupo → POST /grupos/{id}/alta
      */
     @Listen("onClick = button#btnAltaG")
     public void altaGrupo(ForwardEvent evt) {
@@ -115,7 +143,7 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
                                .path(String.valueOf(idGrupo))
                                .path("alta");
         t.request()
-         .header("usuario", "USUARIO_LOGUEADO")  // para pruebas
+         .header("usuario", "USUARIO_LOGUEADO")
          .post(null);
 
         Clients.showNotification("Grupo reactivado.", "info", null, "top_center", 2000);
@@ -123,43 +151,47 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
     }
 
     /**
-     * Botón “Editar” → abre la ventana y completa campos con los valores del mapa
+     * 6) Abrir ventana “Editar Grupo” con datos cargados
      */
     @Listen("onClick = button#btnEditarG")
     public void editarGrupo(ForwardEvent evt) {
         Row fila = (Row) evt.getOrigin().getTarget().getParent().getParent();
         @SuppressWarnings("unchecked")
         Map<String, Object> datos = (Map<String, Object>) fila.getValue();
+        idGrupoEnEdicion = ((Number) datos.get("id")).longValue();
 
         txtNombreEditG.setValue((String) datos.get("nombre"));
-        txtDescripcionEditG.setValue((String) datos.get("descripcionGrupo"));
+        txtDescEditG.setValue((String) datos.get("descripcionGrupo"));
         cmbEstadoEditG.setValue((String) datos.get("estado"));
 
-        winEditGrupo.setAttribute("idGrupo", datos.get("id"));
         winEditGrupo.doModal();
     }
 
     /**
-     * Botón “Guardar” de la ventana de edición → hace PUT /grupos/{id}
+     * 7) Guardar cambios edición → PUT /grupos/{id}
      */
     @Listen("onClick = button#btnGuardarEditG")
     public void guardarEditGrupo() {
-        Long idGrupo = (Long) winEditGrupo.getAttribute("idGrupo");
+        String nombre = txtNombreEditG.getValue().trim();
+        String descripcion = txtDescEditG.getValue().trim();
+        String estado = cmbEstadoEditG.getValue();
+
+        if (nombre.isEmpty() || estado == null || estado.isEmpty()) {
+            Clients.showNotification("El nombre y estado son obligatorios.", "warning", null, "top_center", 2000);
+            return;
+        }
 
         Map<String, Object> payload = new HashMap<>();
-        payload.put("id", idGrupo);
-        // La REST espera “descripcionGrupo” en BD, pero en nuestro servicio lo abrimos como “nombre”
-        payload.put("nombre", txtNombreEditG.getValue());
-        payload.put("estado", cmbEstadoEditG.getValue());
+        payload.put("id", idGrupoEnEdicion);
+        payload.put("nombre", nombre);
+        payload.put("descripcionGrupo", descripcion);
+        payload.put("estado", estado);
         payload.put("usuarioModificacion", "USUARIO_LOGUEADO");
 
-        WebTarget t = jaxClient.target(BASE_URL)
-                               .path("grupos")
-                               .path(String.valueOf(idGrupo));
-        t.request()
-         .put(javax.ws.rs.client.Entity.json(payload));
+        WebTarget t = jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(idGrupoEnEdicion));
+        t.request().put(Entity.json(payload));
 
-        Clients.showNotification("Datos guardados.", "success", null, "top_center", 2000);
+        Clients.showNotification("Datos actualizados.", "success", null, "top_center", 2000);
         winEditGrupo.onClose();
         cargarGrillaGrupos();
     }

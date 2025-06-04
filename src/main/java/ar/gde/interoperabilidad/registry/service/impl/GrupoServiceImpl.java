@@ -30,29 +30,54 @@ public class GrupoServiceImpl implements GrupoService {
     // REG_GRUPO
     // ---------------------------------------
 
+    /**
+     * 1) Listar todos los grupos (GET /grupos)
+     *    Devuelve id, nombre (alias de descripcionGrupo), estado, fechas y usuarios.
+     */
     @Override
     public List<Map<String, Object>> listarTodosGrupos() {
         String sql = ""
-            + "SELECT id, descripcionGrupo AS nombre, estadoGrupo AS estado, "
-            + "       TO_CHAR(fechaCreacion,'YYYY-MM-DD HH24:MI:SS') AS fechaCreacion, "
+            + "SELECT id, "
+            + "       descripcionGrupo AS nombre, "
+            + "       estadoGrupo       AS estado, "
+            + "       TO_CHAR(fechaCreacion,    'YYYY-MM-DD HH24:MI:SS') AS fechaCreacion, "
             + "       TO_CHAR(fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, "
-            + "       usuarioCreacion, usuarioModificacion "
-            + "FROM REG_GRUPO";
+            + "       usuarioCreacion, "
+            + "       usuarioModificacion "
+            + "  FROM REG_GRUPO";
         return jdbc.queryForList(sql);
     }
 
+    /**
+     * 2) Obtener un grupo por su id (GET /grupos/{id})
+     */
     @Override
     public Map<String, Object> obtenerGrupoPorId(long idGrupo) {
         String sql = ""
-            + "SELECT id, descripcionGrupo AS nombre, estadoGrupo AS estado, "
-            + "       TO_CHAR(fechaCreacion,'YYYY-MM-DD HH24:MI:SS') AS fechaCreacion, "
+            + "SELECT id, "
+            + "       descripcionGrupo AS nombre, "
+            + "       estadoGrupo       AS estado, "
+            + "       TO_CHAR(fechaCreacion,    'YYYY-MM-DD HH24:MI:SS') AS fechaCreacion, "
             + "       TO_CHAR(fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, "
-            + "       usuarioCreacion, usuarioModificacion "
-            + "FROM REG_GRUPO "
-            + "WHERE id = ?";
+            + "       usuarioCreacion, "
+            + "       usuarioModificacion "
+            + "  FROM REG_GRUPO "
+            + " WHERE id = ?";
         return jdbc.queryForMap(sql, idGrupo);
     }
 
+    /**
+     * 3) Crear un nuevo grupo (POST /grupos)
+     *    Se espera un Map<String,Object> con claves:
+     *      - "nombre"            → se inserta en descripcionGrupo
+     *      - "estado"            → se inserta en estadoGrupo
+     *      - "usuarioCreacion"   → usuario que crea el registro
+     *
+     *    OBSERVACIÓN: Si la tabla REG_GRUPO no tiene un campo separado para 'descripción',
+     *    aquí estamos usando descripcionGrupo como el “nombre” del grupo. Si más adelante
+     *    deseas almacenar un texto de descripción distinto al nombre, tendrías que agregar una
+     *    columna adicional en la tabla (por ejemplo, descripcionTexto).
+     */
     @Override
     public void crearGrupo(Map<String, Object> datos) {
         String sql = ""
@@ -67,6 +92,14 @@ public class GrupoServiceImpl implements GrupoService {
         );
     }
 
+    /**
+     * 4) Actualizar un grupo existente (PUT /grupos/{id})
+     *    Se espera un Map<String,Object> con claves:
+     *      - "id"                  → id del grupo a actualizar
+     *      - "nombre"              → nuevo valor para descripcionGrupo
+     *      - "estado"              → nuevo valor para estadoGrupo
+     *      - "usuarioModificacion" → usuario que realiza la modificación
+     */
     @Override
     public void actualizarGrupo(Map<String, Object> datos) {
         String sql = ""
@@ -85,9 +118,14 @@ public class GrupoServiceImpl implements GrupoService {
         );
     }
 
+    /**
+     * 5) Dar de baja un grupo (DELETE /grupos/{id})
+     *    Aquí marcamos el grupo como INACTIVO y, opcionalmente,
+     *    también podemos desactivar en cascada los ecosistemas asociados.
+     */
     @Override
     public void bajaGrupo(long idGrupo) {
-        // 1) Marcar el grupo como INACTIVO
+        // 5.1) Marcar el grupo como INACTIVO
         String sql1 = ""
             + "UPDATE REG_GRUPO SET "
             + "  estadoGrupo         = 'INACTIVO', "
@@ -96,7 +134,8 @@ public class GrupoServiceImpl implements GrupoService {
             + "WHERE id = ?";
         jdbc.update(sql1, idGrupo);
 
-        // 2) Marcar todos los ecosistemas de ese grupo como INACTIVOS
+        // 5.2) (Opcional) Desactivar todos los ecosistemas de ese grupo
+        //       Si no deseas esta lógica de cascada, simplemente comenta o elimina este bloque.
         String sql2 = ""
             + "UPDATE REG_ECOSISTEMA SET "
             + "  estado             = 'INACTIVO', "
@@ -106,9 +145,12 @@ public class GrupoServiceImpl implements GrupoService {
         jdbc.update(sql2, idGrupo);
     }
 
+    /**
+     * 6) Dar de alta un grupo (POST /grupos/{id}/alta)
+     *    Vuelve a marcar el registro como ACTIVO. No reactivamos ecosistemas en cascada.
+     */
     @Override
     public void altaGrupo(long idGrupo, String usuarioModificacion) {
-        // Al “dar de alta” solo reactivamos el grupo; los ecosistemas quedan tal cual.
         String sql = ""
             + "UPDATE REG_GRUPO SET "
             + "  estadoGrupo         = 'ACTIVO', "
@@ -116,16 +158,5 @@ public class GrupoServiceImpl implements GrupoService {
             + "  usuarioModificacion = ? "
             + "WHERE id = ?";
         jdbc.update(sql, usuarioModificacion, idGrupo);
-    }
-
-    @Override
-    public void altaEcosistema(String nombreEcosistema, String usuarioModificacion) {
-        String sql = ""
-            + "UPDATE REG_ECOSISTEMA SET "
-            + "  estado             = 'ACTIVO', "
-            + "  fechaModificacion   = SYSDATE, "
-            + "  usuarioModificacion = ? "
-            + "WHERE descripcionEcosistema = ?";
-        jdbc.update(sql, usuarioModificacion, nombreEcosistema);
     }
 }

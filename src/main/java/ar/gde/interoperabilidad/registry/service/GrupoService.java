@@ -11,6 +11,4 @@ public interface GrupoService {
     void actualizarGrupo(Map<String, Object> datos);
     void bajaGrupo(long idGrupo);
     void altaGrupo(long idGrupo, String usuarioModificacion);
-    void altaEcosistema(String nombreEcosistema, String usuarioModificacion);
-
 }

@@ -1,8 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<zk xmlns:n="native"
+<zk xmlns="http://www.zkoss.org/2005/zul"
+    xmlns:n="native"
     viewModel="@id('vm') @init('ar.gde.interoperabilidad.registry.zk.ABMGrupoComposer')">
-  
-  <!-- Ventana principal sin height, usando vflex="1" -->
+
+  <!-- =============================== -->
+  <!-- 1) ESTILOS GLOBALES            -->
+  <!-- =============================== -->
+  <style>
+    .btnSmall {
+      padding: 2px 6px;
+      font-size: 12px;
+    }
+    .btnSmall img {
+      max-width: 16px;
+      max-height: 16px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+    .btnSmall .z-button-text {
+      vertical-align: middle;
+    }
+  </style>
+
+  <!-- ================================================= -->
+  <!-- 2) VENTANA PRINCIPAL: “Administración de Grupos” -->
+  <!-- ================================================= -->
   <window id="winABMGrupo"
           border="normal"
           title="Administración de Grupos"
@@ -10,147 +32,185 @@
           vflex="1">
 
     <vlayout width="100%" vflex="1" spacing="5px">
-      <!-- Título de la lista como label normal -->
+
+      <!-- 2.1) Título de la sección -->
       <label value="Lista de Grupos"
              style="font-weight:bold; font-size:14px;" />
 
+      <!-- 2.2) Grilla paginada de grupos -->
       <grid id="gridGrupos"
             mold="paging"
             pageSize="10"
-            vflex="1">
+            vflex="1"
+            emptyMessage="No hay Grupos cargados."
+            model="@load(vm.gruposModel)">
+
+        <!-- ─────────────────────────── -->
+        <!-- 2.2.1) AUXHEAD con botón   -->
+        <!-- ─────────────────────────── -->
+        <auxhead>
+          <auxheader colspan="8">
+            <hbox width="100%" pack="end" style="padding:4px 0px;">
+              <button
+                id="btnAbrirAddG"
+                class="btnSmall"
+                label="Agregar Grupo"
+                image="/imgs/add.png"
+                onClick="@command('abrirAgregarGrupo')" />
+            </hbox>
+          </auxheader>
+        </auxhead>
+
+        <!-- ─────────────────────────── -->
+        <!-- 2.2.2) Definición columnas -->
+        <!-- ─────────────────────────── -->
         <columns menupopup="auto">
-          <column label="ID"               width="60px"/>
-          <column label="Nombre"           width="200px"/>
-          <column label="Estado"           width="100px"/>
-          <column label="Fecha Creación"   width="140px"/>
+          <column label="ID"                 width="60px"/>
+          <column label="Nombre"             width="200px"/>
+          <column label="Descripción"        width="200px"/>
+          <column label="Estado"             width="100px"/>
+          <column label="Fecha Creación"     width="140px"/>
           <column label="Fecha Modificación" width="140px"/>
-          <column label="Usuario Creación" width="120px"/>
-          <column label="Usuario Modificación" width="120px"/>
-          <column label="Acciones"         width="180px"/>
+          <column label="Usuario Creación"   width="120px"/>
+          <column label="Acciones"           width="180px"/>
         </columns>
+
+        <!-- ─────────────────────────── -->
+        <!-- 2.2.3) Filas (rows)         -->
+        <!-- ─────────────────────────── -->
         <rows>
           <template name="model" var="each">
             <row>
-              <label value="${each['id']}"/>
-              <label value="${each['nombre']}"/>
-              <label value="${each['estado']}"/>
-              <label value="${each['fechaCreacion']}"/>
-              <label value="${each['fechaModificacion']}"/>
-              <label value="${each['usuarioCreacion']}"/>
-              <label value="${each['usuarioModificacion']}"/>
+              <label value="@load(each['id'])"/>
+              <label value="@load(each['nombre'])"/>
+              <label value="@load(each['descripcionGrupo'])"/>
+              <label value="@load(each['estado'])"/>
+              <label value="@load(each['fechaCreacion'])"/>
+              <label value="@load(each['fechaModificacion'])"/>
+              <label value="@load(each['usuarioCreacion'])"/>
+
+              <!-- Botones: Editar / Dar baja o Dar alta -->
               <hlayout spacing="4px">
-                <button id="btnVerG"
-                        label="Ver"
-                        image="/imgs/view.png"
-                        onClick="@command('verGrupo', item=each)"/>
-                <button id="btnEditarG"
-                        label="Editar"
-                        image="/imgs/edit.png"
-                        onClick="@command('editarGrupo', item=each)"/>
-                <button id="btnBajaG"
-                        label="Baja"
-                        visible="${each['estado']=='ACTIVO'}"
-                        image="/imgs/delete.png"
-                        onClick="@command('bajaGrupo', item=each)"/>
-                <button id="btnAltaG"
-                        label="Alta"
-                        visible="${each['estado']=='INACTIVO'}"
-                        image="/imgs/activate.png"
-                        onClick="@command('altaGrupo', item=each)"/>
+                <button 
+                  id="btnEditarG"
+                  class="btnSmall"
+                  label="Editar"
+                  image="/imgs/edit.png"
+                  onClick="@command('editarGrupo', item=each)"/>
+                <button 
+                  id="btnBajaG"
+                  class="btnSmall"
+                  label="Dar baja"
+                  image="/imgs/delete.png"
+                  visible="@load(each['estado'] eq 'ACTIVO')"
+                  onClick="@command('bajaGrupo', item=each)"/>
+                <button 
+                  id="btnAltaG"
+                  class="btnSmall"
+                  label="Dar alta"
+                  image="/imgs/activate.png"
+                  visible="@load(each['estado'] eq 'INACTIVO')"
+                  onClick="@command('altaGrupo', item=each)"/>
               </hlayout>
             </row>
           </template>
         </rows>
       </grid>
     </vlayout>
-
-    <!-- Ventana “Ver Grupo” -->
-    <window id="winVerGrupo"
-            title="Detalles de Grupo"
-            border="normal"
-            width="500px"
-            closable="true"
-            visible="false"
-            position="center"
-            mode="modal">
-      <grid width="100%">
-        <columns>
-          <column label="Campo" width="150px"/>
-          <column label="Valor"  width="*"/>
-        </columns>
-        <rows>
-          <row>
-            <label value="Nombre"/>
-            <textbox id="txtNombreVerG" readonly="true"/>
-          </row>
-          <row>
-            <label value="Descripción"/>
-            <textbox id="txtDescripcionVerG" readonly="true"/>
-          </row>
-          <row>
-            <label value="Estado"/>
-            <textbox id="txtEstadoVerG" readonly="true"/>
-          </row>
-          <row>
-            <label value="Fecha Creación"/>
-            <textbox id="txtFechaCreacionVerG" readonly="true"/>
-          </row>
-          <row>
-            <label value="Fecha Modificación"/>
-            <textbox id="txtFechaModVerG" readonly="true"/>
-          </row>
-          <row>
-            <label value="Usuario Creación"/>
-            <textbox id="txtUserCrearVerG" readonly="true"/>
-          </row>
-          <row>
-            <label value="Usuario Modificación"/>
-            <textbox id="txtUserModVerG" readonly="true"/>
-          </row>
-        </rows>
-      </grid>
-      <button label="Cerrar" onClick="winVerGrupo.onClose()"/>
-    </window>
-
-    <!-- Ventana “Editar Grupo” -->
-    <window id="winEditGrupo"
-            title="Editar Grupo"
-            border="normal"
-            width="500px"
-            closable="true"
-            visible="false"
-            position="center"
-            mode="modal">
-      <grid width="100%">
-        <columns>
-          <column label="Campo" width="150px"/>
-          <column label="Valor"  width="*"/>
-        </columns>
-        <rows>
-          <row>
-            <label value="Nombre"/>
-            <textbox id="txtNombreEditG"/>
-          </row>
-          <row>
-            <label value="Descripción"/>
-            <textbox id="txtDescripcionEditG"/>
-          </row>
-          <row>
-            <label value="Estado"/>
-            <combobox id="cmbEstadoEditG">
-              <comboitem label="ACTIVO"/>
-              <comboitem label="INACTIVO"/>
-            </combobox>
-          </row>
-        </rows>
-      </grid>
-      <hlayout spacing="4px">
-        <button id="btnGuardarEditG"
-                label="Guardar"
-                image="/imgs/save.png"
-                onClick="@command('guardarGrupo')"/>
-        <button label="Cancelar" onClick="winEditGrupo.onClose()"/>
-      </hlayout>
-    </window>
   </window>
+  <!-- ========== FIN VENTANA PRINCIPAL ========== -->
+
+
+  <!-- ============================================= -->
+  <!-- 3) POP-UP: “Agregar Grupo”                    -->
+  <!-- ============================================= -->
+  <window id="winAddGrupo"
+          title="Agregar Grupo"
+          border="normal"
+          width="500px"
+          closable="true"
+          visible="false"
+          position="center"
+          mode="modal">
+    <grid width="100%">
+      <columns>
+        <column label="Campo" width="150px"/>
+        <column label="Valor"  width="*"/>
+      </columns>
+      <rows>
+        <row>
+          <label value="Nombre"/>
+          <textbox id="txtNombreAddG" placeholder="Ingrese nombre"/>
+        </row>
+        <row>
+          <label value="Descripción"/>
+          <textbox id="txtDescAddG" placeholder="Ingrese descripción"/>
+        </row>
+        <row>
+          <label value="Estado"/>
+          <combobox id="cmbEstadoAddG">
+            <comboitem label="ACTIVO"/>
+            <comboitem label="INACTIVO"/>
+          </combobox>
+        </row>
+      </rows>
+    </grid>
+
+    <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
+      <button id="btnGuardarAddG"
+              class="btnSmall"
+              label="Guardar"
+              image="/imgs/save.png"
+              onClick="@command('guardarNuevoGrupo')" />
+      <button label="Cancelar" onClick="winAddGrupo.onClose()"/>
+    </hbox>
+  </window>
+
+
+  <!-- ============================================= -->
+  <!-- 4) POP-UP: “Editar Grupo”                      -->
+  <!-- ============================================= -->
+  <window id="winEditGrupo"
+          title="Editar Grupo"
+          border="normal"
+          width="500px"
+          closable="true"
+          visible="false"
+          position="center"
+          mode="modal">
+
+    <grid width="100%">
+      <columns>
+        <column label="Campo" width="150px"/>
+        <column label="Valor"  width="*"/>
+      </columns>
+      <rows>
+        <row>
+          <label value="Nombre"/>
+          <textbox id="txtNombreEditG"/>
+        </row>
+        <row>
+          <label value="Descripción"/>
+          <textbox id="txtDescEditG"/>
+        </row>
+        <row>
+          <label value="Estado"/>
+          <combobox id="cmbEstadoEditG">
+            <comboitem label="ACTIVO"/>
+            <comboitem label="INACTIVO"/>
+          </combobox>
+        </row>
+      </rows>
+    </grid>
+
+    <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
+      <button id="btnGuardarEditG"
+              class="btnSmall"
+              label="Guardar"
+              image="/imgs/save.png"
+              onClick="@command('guardarEditGrupo')" />
+      <button label="Cancelar" onClick="winEditGrupo.onClose()"/>
+    </hbox>
+  </window>
+
 </zk>

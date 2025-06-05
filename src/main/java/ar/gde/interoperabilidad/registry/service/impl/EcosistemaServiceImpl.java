@@ -1,19 +1,13 @@
+// src/main/java/ar/gde/interoperabilidad/registry/service/impl/EcosistemaServiceImpl.java
 package ar.gde.interoperabilidad.registry.service.impl;
 
 import org.springframework.stereotype.Service;
-
 import ar.gde.interoperabilidad.registry.service.EcosistemaService;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import org.springframework.stereotype.Service;
-// ← Import del Autowired
-import org.springframework.beans.factory.annotation.Autowired;
-// ← Import de JdbcTemplate (ahora existe gracias a spring-jdbc)
-import org.springframework.jdbc.core.JdbcTemplate;
 import java.net.URL;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -26,17 +20,18 @@ public class EcosistemaServiceImpl implements EcosistemaService {
     @Autowired
     private DataSource dataSource;
 
-    private JdbcTemplate jdbc;
+    // Usaremos un único JdbcTemplate para todas las consultas/updates
+    private JdbcTemplate jdbcTemplate;
 
     @PostConstruct
     public void init() {
-        this.jdbc = new JdbcTemplate(dataSource);
+        // Inicializamos jdbcTemplate con el DataSource inyectado
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
     // ---------------------------------------
     // REG_GRUPO
     // ---------------------------------------
-
     @Override
     public List<Map<String, Object>> listarTodosGrupos() {
         String sql = ""
@@ -45,7 +40,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       TO_CHAR(fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, "
             + "       usuarioCreacion, usuarioModificacion "
             + "FROM REG_GRUPO";
-        return jdbc.queryForList(sql);
+        return jdbcTemplate.queryForList(sql);
     }
 
     @Override
@@ -57,7 +52,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       usuarioCreacion, usuarioModificacion "
             + "FROM REG_GRUPO "
             + "WHERE id = ?";
-        return jdbc.queryForMap(sql, idGrupo);
+        return jdbcTemplate.queryForMap(sql, idGrupo);
     }
 
     @Override
@@ -66,7 +61,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "INSERT INTO REG_GRUPO "
             + "(descripcionGrupo, estadoGrupo, fechaCreacion, usuarioCreacion) "
             + "VALUES (?, ?, SYSDATE, ?)";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("nombre"),        // descripcionGrupo
             datos.get("estado"),        // estadoGrupo
@@ -83,7 +78,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion   = SYSDATE, "
             + "  usuarioModificacion = ? "
             + "WHERE id = ?";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("nombre"),
             datos.get("estado"),
@@ -101,7 +96,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion   = SYSDATE, "
             + "  usuarioModificacion = 'SYSTEM' "
             + "WHERE id = ?";
-        jdbc.update(sql1, idGrupo);
+        jdbcTemplate.update(sql1, idGrupo);
 
         // 2) Marcar todos los ecosistemas de ese grupo como INACTIVOS
         String sql2 = ""
@@ -110,7 +105,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion   = SYSDATE, "
             + "  usuarioModificacion = 'SYSTEM' "
             + "WHERE regGrupo = ?";
-        jdbc.update(sql2, idGrupo);
+        jdbcTemplate.update(sql2, idGrupo);
     }
 
     @Override
@@ -121,7 +116,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion   = SYSDATE, "
             + "  usuarioModificacion = ? "
             + "WHERE descripcionEcosistema = ?";
-        jdbc.update(sql, usuarioModificacion, nombreEcosistema);
+        jdbcTemplate.update(sql, usuarioModificacion, nombreEcosistema);
     }
 
     // ---------------------------------------
@@ -130,91 +125,88 @@ public class EcosistemaServiceImpl implements EcosistemaService {
 
     @Override
     public List<Map<String, Object>> listarTodosEcosistemas() {
-        String sql = ""
-            + "SELECT e.id, e.descripcionEcosistema AS nombre, e.estado, "
-            + "       TO_CHAR(e.fechaCreacion,'YYYY-MM-DD HH24:MI:SS') AS fechaCreacion, "
-            + "       TO_CHAR(e.fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, "
-            + "       e.usuarioCreacion, e.usuarioModificacion, "
-            + "       e.certificado, e.version, "
-            + "       g.id     AS idGrupo, "
-            + "       g.descripcionGrupo AS nombreGrupo "
-            + "FROM REG_ECOSISTEMA e "
-            + "LEFT JOIN REG_GRUPO g ON e.regGrupo = g.id";
-        return jdbc.queryForList(sql);
+        String sql =
+            "SELECT e.id, e.descripcionEcosistema AS nombre, e.estado, " +
+            "       TO_CHAR(e.fechaCreacion,'YYYY-MM-DD HH24:MI:SS')   AS fechaCreacion, " +
+            "       TO_CHAR(e.fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, " +
+            "       e.usuarioCreacion, e.usuarioModificacion, " +
+            "       g.descripcionGrupo AS nombreGrupo, e.version, e.certificado " +
+            "  FROM REG_ECOSISTEMA e " +
+            "  LEFT JOIN REG_GRUPO g ON e.regGrupo = g.id " +
+            " ORDER BY e.descripcionEcosistema";
+        return jdbcTemplate.queryForList(sql);
     }
 
     @Override
     public Map<String, Object> obtenerEcosistemaPorNombre(String nombreEcosistema) {
-        String sql = ""
-            + "SELECT e.id, e.descripcionEcosistema AS nombre, e.estado, "
-            + "       TO_CHAR(e.fechaCreacion,'YYYY-MM-DD HH24:MI:SS') AS fechaCreacion, "
-            + "       TO_CHAR(e.fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, "
-            + "       e.usuarioCreacion, e.usuarioModificacion, "
-            + "       e.certificado, e.version, "
-            + "       g.id     AS idGrupo, "
-            + "       g.descripcionGrupo AS nombreGrupo "
-            + "FROM REG_ECOSISTEMA e "
-            + "LEFT JOIN REG_GRUPO g ON e.regGrupo = g.id "
-            + "WHERE e.descripcionEcosistema = ?";
-        return jdbc.queryForMap(sql, nombreEcosistema);
+        String sql =
+            "SELECT e.id, e.descripcionEcosistema AS nombre, e.estado, " +
+            "       TO_CHAR(e.fechaCreacion,'YYYY-MM-DD HH24:MI:SS')   AS fechaCreacion, " +
+            "       TO_CHAR(e.fechaModificacion,'YYYY-MM-DD HH24:MI:SS') AS fechaModificacion, " +
+            "       e.usuarioCreacion, e.usuarioModificacion, " +
+            "       g.descripcionGrupo AS nombreGrupo, e.version, e.certificado " +
+            "  FROM REG_ECOSISTEMA e " +
+            "  LEFT JOIN REG_GRUPO g ON e.regGrupo = g.id " +
+            " WHERE e.descripcionEcosistema = ?";
+        return jdbcTemplate.queryForMap(sql, nombreEcosistema);
     }
 
     @Override
     public void crearEcosistema(Map<String, Object> datos) {
-        String sql = ""
-            + "INSERT INTO REG_ECOSISTEMA "
-            + "("
-            + "  descripcionEcosistema, estado, fechaCreacion, usuarioCreacion, "
-            + "  certificado, version, regGrupo"
-            + ") VALUES ("
-            + "  ?, ?, SYSDATE, ?, "
-            + "  ?, ?, "
-            + "  (SELECT id FROM REG_GRUPO WHERE descripcionGrupo = ?)"
-            + ")";
-        jdbc.update(
-            sql,
-            datos.get("nombre"),          // descripcionEcosistema
-            datos.get("estado"),          // estado
+        // Suponiendo que datos trae "nombre", "estado", "usuarioCreacion", "certificado", "version", "grupo"
+        // Primero obtenemos el ID del grupo a partir de descripciónGrupo:
+        String sqlGrupo = "SELECT id FROM REG_GRUPO WHERE descripcionGrupo = ?";
+        Integer idGrupo = jdbcTemplate.queryForObject(sqlGrupo, new Object[]{ datos.get("grupo") }, Integer.class);
+
+        String insertSql =
+            "INSERT INTO REG_ECOSISTEMA " +
+            "   (id, descripcionEcosistema, estado, fechaCreacion, usuarioCreacion, certificado, version, regGrupo) " +
+            " VALUES (REG_ECOSISTEMA_SEQ.NEXTVAL, ?, ?, SYSDATE, ?, ?, ?, ?)";
+        jdbcTemplate.update(insertSql,
+            datos.get("nombre"),
+            datos.get("estado"),
             datos.get("usuarioCreacion"),
             datos.get("certificado"),
             datos.get("version"),
-            datos.get("grupo")            // descripcionGrupo
+            idGrupo
         );
     }
 
     @Override
     public void actualizarEcosistema(Map<String, Object> datos) {
-        String sql = ""
-            + "UPDATE REG_ECOSISTEMA SET "
-            + "  descripcionEcosistema = ?, "
-            + "  estado               = ?, "
-            + "  fechaModificacion    = SYSDATE, "
-            + "  usuarioModificacion  = ?, "
-            + "  certificado          = ?, "
-            + "  version              = ?, "
-            + "  regGrupo             = (SELECT id FROM REG_GRUPO WHERE descripcionGrupo = ?) "
-            + "WHERE id = ?";
-        jdbc.update(
-            sql,
-            datos.get("nombre"),             // descripcionEcosistema
-            datos.get("estado"),             // estado
+        // datos trae "id", "nombre", "estado", "usuarioModificacion", "certificado", "version", "grupo"
+        String sqlGrupo = "SELECT id FROM REG_GRUPO WHERE descripcionGrupo = ?";
+        Integer idGrupo = jdbcTemplate.queryForObject(sqlGrupo, new Object[]{ datos.get("grupo") }, Integer.class);
+
+        String updateSql =
+            "UPDATE REG_ECOSISTEMA " +
+            "   SET descripcionEcosistema = ?, " +
+            "       estado             = ?, " +
+            "       fechaModificacion  = SYSDATE, " +
+            "       usuarioModificacion= ?, " +
+            "       certificado        = ?, " +
+            "       version            = ?, " +
+            "       regGrupo           = ? " +
+            " WHERE id = ?";
+        jdbcTemplate.update(updateSql,
+            datos.get("nombre"),
+            datos.get("estado"),
             datos.get("usuarioModificacion"),
             datos.get("certificado"),
             datos.get("version"),
-            datos.get("grupo"),              // nombreGrupo
-            datos.get("id")                  // idEcosistema
+            idGrupo,
+            datos.get("id")
         );
     }
 
     @Override
     public void bajaEcosistema(String nombreEcosistema) {
-        String sql = ""
-            + "UPDATE REG_ECOSISTEMA SET "
-            + "  estado               = 'INACTIVO', "
-            + "  fechaModificacion    = SYSDATE, "
-            + "  usuarioModificacion  = 'SYSTEM' "
-            + "WHERE descripcionEcosistema = ?";
-        jdbc.update(sql, nombreEcosistema);
+        String sql =
+            "UPDATE REG_ECOSISTEMA " +
+            "   SET estado = 'INACTIVO', " +
+            "       fechaModificacion = SYSDATE " +
+            " WHERE descripcionEcosistema = ?";
+        jdbcTemplate.update(sql, nombreEcosistema);
     }
 
     // ---------------------------------------
@@ -232,13 +224,13 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       e.id   AS idEcosistema, "
             + "       e.descripcionEcosistema AS nombreEcosistema, "
             + "       m.id   AS idModulo, "
-            + "       m.nombre     AS nombreModulo, "
+            + "       m.descripcion AS nombreModulo, "
             + "       m.prefixName AS prefixNameModulo "
             + "FROM REG_DOMINIO_ECOSISTEMA d "
             + "JOIN REG_ECOSISTEMA e ON d.idEcosistema = e.id "
             + "JOIN REG_MODULO m      ON d.idModulo     = m.id "
             + "WHERE e.descripcionEcosistema = ?";
-        return jdbc.queryForList(sql, nombreEcosistema);
+        return jdbcTemplate.queryForList(sql, nombreEcosistema);
     }
 
     @Override
@@ -252,13 +244,13 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       e.id   AS idEcosistema, "
             + "       e.descripcionEcosistema AS nombreEcosistema, "
             + "       m.id   AS idModulo, "
-            + "       m.nombre AS nombreModulo, "
+            + "       m.descripcion AS nombreModulo, "
             + "       m.prefixName AS prefixNameModulo "
             + "FROM REG_DOMINIO_ECOSISTEMA d "
             + "JOIN REG_ECOSISTEMA e ON d.idEcosistema = e.id "
             + "JOIN REG_MODULO m      ON d.idModulo     = m.id "
             + "WHERE d.id = ?";
-        return jdbc.queryForMap(sql, idDominio);
+        return jdbcTemplate.queryForMap(sql, idDominio);
     }
 
     @Override
@@ -273,7 +265,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  (SELECT id FROM REG_ECOSISTEMA WHERE descripcionEcosistema = ?), "
             + "  ?, SYSDATE, ?"
             + ")";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("nombreDominio"),        // descripcionDominio
             datos.get("tipoDominio"),          // tipoDominio
@@ -296,7 +288,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion    = SYSDATE, "
             + "  usuarioModificacion  = ? "
             + "WHERE id = ?";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("nombreDominio"),
             datos.get("tipoDominio"),
@@ -315,7 +307,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion    = SYSDATE, "
             + "  usuarioModificacion  = 'SYSTEM' "
             + "WHERE id = ?";
-        jdbc.update(sql, idDominio);
+        jdbcTemplate.update(sql, idDominio);
     }
 
     // ---------------------------------------
@@ -331,7 +323,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       usuarioCreacion, usuarioModificacion, "
             + "       componentName, prefixName, regGenericEndpoints "
             + "FROM REG_MODULO";
-        return jdbc.queryForList(sql);
+        return jdbcTemplate.queryForList(sql);
     }
 
     @Override
@@ -344,7 +336,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       componentName, prefixName, regGenericEndpoints "
             + "FROM REG_MODULO "
             + "WHERE id = ?";
-        return jdbc.queryForMap(sql, idModulo);
+        return jdbcTemplate.queryForMap(sql, idModulo);
     }
 
     @Override
@@ -358,13 +350,13 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  ?, ?, ?, ?, ?, "
             + "  SYSDATE, ?"
             + ")";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("nombre"),
             datos.get("estado"),
             datos.get("componentName"),
             datos.get("prefixName"),
-            datos.get("regGenericEndpoints"),  // boolean o flag
+            datos.get("regGenericEndpoints"),  // 'S' o 'N'
             datos.get("usuarioCreacion")
         );
     }
@@ -381,7 +373,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion   = SYSDATE, "
             + "  usuarioModificacion = ? "
             + "WHERE id = ?";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("nombre"),
             datos.get("estado"),
@@ -401,7 +393,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion  = SYSDATE, "
             + "  usuarioModificacion = 'SYSTEM' "
             + "WHERE id = ?";
-        jdbc.update(sql, idModulo);
+        jdbcTemplate.update(sql, idModulo);
     }
 
     // ---------------------------------------
@@ -421,7 +413,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "FROM REG_GENERIC_ENDPOINTS g "
             + "JOIN REG_ECOSISTEMA e ON g.idEcosistema = e.id "
             + "WHERE g.idModulo = ? AND e.descripcionEcosistema = ?";
-        return jdbc.queryForList(sql, idModulo, nombreEcosistema);
+        return jdbcTemplate.queryForList(sql, idModulo, nombreEcosistema);
     }
 
     @Override
@@ -436,7 +428,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       g.idModulo "
             + "FROM REG_GENERIC_ENDPOINTS g "
             + "WHERE g.id = ?";
-        return jdbc.queryForMap(sql, idEndpoint);
+        return jdbcTemplate.queryForMap(sql, idEndpoint);
     }
 
     @Override
@@ -451,7 +443,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  (SELECT id FROM REG_ECOSISTEMA WHERE descripcionEcosistema = ?), "
             + "  ?, SYSDATE, ?"
             + ")";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("descripcion"),
             datos.get("discriminador"),
@@ -474,7 +466,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion    = SYSDATE, "
             + "  usuarioModificacion  = ? "
             + "WHERE id = ?";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("descripcion"),
             datos.get("discriminador"),
@@ -493,7 +485,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion  = SYSDATE, "
             + "  usuarioModificacion = 'SYSTEM' "
             + "WHERE id = ?";
-        jdbc.update(sql, idEndpoint);
+        jdbcTemplate.update(sql, idEndpoint);
     }
 
     // ---------------------------------------
@@ -511,7 +503,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       ed.idDominioEcosistema, "
             + "       d.descripcionDominio AS nombreDominio, "
             + "       ed.idModulo, "
-            + "       m.nombre AS nombreModulo, "
+            + "       m.descripcion AS nombreModulo, "
             + "       ed.discriminador, "
             + "       ed.regGenericEndpoints AS regGenericEndpoints "
             + "FROM REG_ENDPOINT_DOMINIO ed "
@@ -519,7 +511,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "JOIN REG_ECOSISTEMA e      ON d.idEcosistema = e.id "
             + "JOIN REG_MODULO m          ON ed.idModulo = m.id "
             + "WHERE e.descripcionEcosistema = ?";
-        return jdbc.queryForList(sql, nombreEcosistema);
+        return jdbcTemplate.queryForList(sql, nombreEcosistema);
     }
 
     @Override
@@ -533,14 +525,14 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       ed.idDominioEcosistema, "
             + "       d.descripcionDominio AS nombreDominio, "
             + "       ed.idModulo, "
-            + "       m.nombre AS nombreModulo, "
+            + "       m.descripcion AS nombreModulo, "
             + "       ed.discriminador, "
             + "       ed.regGenericEndpoints AS regGenericEndpoints "
             + "FROM REG_ENDPOINT_DOMINIO ed "
             + "JOIN REG_DOMINIO_ECOSISTEMA d ON ed.idDominioEcosistema = d.id "
             + "JOIN REG_MODULO m          ON ed.idModulo = m.id "
             + "WHERE ed.id = ?";
-        return jdbc.queryForMap(sql, idEndpointDominio);
+        return jdbcTemplate.queryForMap(sql, idEndpointDominio);
     }
 
     @Override
@@ -554,7 +546,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  ?, ?, ?, ?, ?, "
             + "  SYSDATE, ?, ?"
             + ")";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("estado"),
             datos.get("valorEndpoint"),
@@ -576,7 +568,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  usuarioModificacion = ?, "
             + "  regGenericEndpoints = ? "
             + "WHERE id = ?";
-        jdbc.update(
+        jdbcTemplate.update(
             sql,
             datos.get("estado"),
             datos.get("valorEndpoint"),
@@ -594,7 +586,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "  fechaModificacion  = SYSDATE, "
             + "  usuarioModificacion = 'SYSTEM' "
             + "WHERE id = ?";
-        jdbc.update(sql, idEndpointDominio);
+        jdbcTemplate.update(sql, idEndpointDominio);
     }
 
     @Override
@@ -606,7 +598,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "JOIN REG_ECOSISTEMA e ON d.idEcosistema = e.id "
             + "WHERE e.descripcionEcosistema = ? "
             + "  AND d.tipoDominio = 'PRINCIPAL'";
-        List<Map<String, Object>> filas = jdbc.queryForList(sqlDom, nombreEcosistema);
+        List<Map<String, Object>> filas = jdbcTemplate.queryForList(sqlDom, nombreEcosistema);
 
         Map<String, Object> resultado = new HashMap<>();
         if (filas.isEmpty()) {
@@ -659,7 +651,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       TO_CHAR(fechaModificacion,'YYYY-MM-DD HH24:MI:SS')AS fechaModificacion, "
             + "       usuarioCreacion, usuarioModificacion "
             + "FROM PROPERTY_CONFIGURATION";
-        return jdbc.queryForList(sql);
+        return jdbcTemplate.queryForList(sql);
     }
 
     @Override
@@ -671,14 +663,14 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             + "       usuarioCreacion, usuarioModificacion "
             + "FROM PROPERTY_CONFIGURATION "
             + "WHERE clave = ?";
-        return jdbc.queryForMap(sql, clave);
+        return jdbcTemplate.queryForMap(sql, clave);
     }
 
     @Override
     public void upsertPropiedadConfiguracion(Map<String, Object> datos) {
         String sqlExiste = ""
             + "SELECT COUNT(1) FROM PROPERTY_CONFIGURATION WHERE clave = ?";
-        Integer count = jdbc.queryForObject(sqlExiste, new Object[]{ datos.get("clave") }, Integer.class);
+        Integer count = jdbcTemplate.queryForObject(sqlExiste, new Object[]{ datos.get("clave") }, Integer.class);
 
         if (count != null && count > 0) {
             String sqlUpdate = ""
@@ -688,7 +680,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
                 + "  fechaModificacion = SYSDATE, "
                 + "  usuarioModificacion = ? "
                 + "WHERE clave = ?";
-            jdbc.update(
+            jdbcTemplate.update(
                 sqlUpdate,
                 datos.get("valor"),
                 datos.get("configuracion"),
@@ -700,7 +692,7 @@ public class EcosistemaServiceImpl implements EcosistemaService {
                 + "INSERT INTO PROPERTY_CONFIGURATION "
                 + "(clave, valor, configuracion, fechaCreacion, usuarioCreacion) "
                 + "VALUES (?, ?, ?, SYSDATE, ?)";
-            jdbc.update(
+            jdbcTemplate.update(
                 sqlInsert,
                 datos.get("clave"),
                 datos.get("valor"),
@@ -709,5 +701,4 @@ public class EcosistemaServiceImpl implements EcosistemaService {
             );
         }
     }
-
-}  // cierra EcosistemaServiceImpl
+}

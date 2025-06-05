@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+             http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+           http://www.springframework.org/schema/jdbc
+             http://www.springframework.org/schema/jdbc/spring-jdbc-3.2.xsd
+           http://www.springframework.org/schema/context
+             http://www.springframework.org/schema/context/spring-context-3.2.xsd
+           http://www.springframework.org/schema/tx
+             http://www.springframework.org/schema/tx/spring-tx-3.2.xsd">
+
+    <!-- 1) Definimos el DataSource Oracle apuntando a tu XE local (PDB XEPDB1) -->
+    <bean id="dataSource" class="oracle.jdbc.pool.OracleDataSource" destroy-method="close">
+        <!-- URL de conexión: thin driver, host, puerto, SERVICE_NAME (PDB) -->
+        <property name="URL" value="jdbc:oracle:thin:@localhost:1521/XEPDB1" />
+        <!-- Credenciales del usuario/schema JULIAN -->
+        <property name="user" value="JULIAN" />
+        <property name="password" value="Julian123" />
+        <!-- Propiedades adicionales opcionales -->
+        <property name="connectionCachingEnabled" value="true" />
+        <property name="fastConnectionFailoverEnabled" value="false" />
+    </bean>
+
+    <!-- 2) JdbcTemplate para simplificar queries -->
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <!-- 3) Transaction Manager (si llegas a usar transacciones) -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <!-- 4) Component scan: buscará tus servicios y DAOs en este paquete -->
+    <context:component-scan base-package="ar.gde.interoperabilidad.registry" />
+
+    <!-- 5) No es necesario declarar manualmente EcosistemaServiceImpl
+         porque ya usa @Service("ecosistemaService") -->
+    <!--
+    <bean id="ecosistemaService" class="ar.gde.interoperabilidad.registry.service.impl.EcosistemaServiceImpl">
+        <property name="jdbcTemplate" ref="jdbcTemplate" />
+    </bean>
+    -->
+
+</beans>

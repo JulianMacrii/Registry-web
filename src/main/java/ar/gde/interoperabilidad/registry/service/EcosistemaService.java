@@ -13,6 +13,8 @@ public interface EcosistemaService {
     void actualizarGrupo(Map<String, Object> datos);
     void bajaGrupo(long idGrupo);
     void altaEcosistema(String nombreEcosistema, String usuarioModificacion);
+    List<Map<String, Object>> listarEcosistemasPorGrupo(String descripcionGrupo);
+    List<Map<String, Object>> listarEcosistemasMismoGrupo(String nombreEcosistema);
 
     // REG_ECOSISTEMA
     List<Map<String, Object>> listarTodosEcosistemas();

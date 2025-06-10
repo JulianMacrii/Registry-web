@@ -1,10 +1,12 @@
 // src/main/java/ar/gde/interoperabilidad/registry/zk/ABMEcosistemaComposer.java
 package ar.gde.interoperabilidad.registry.zk;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.zkoss.bind.annotation.BindingParam;
 import org.zkoss.bind.annotation.Command;
 import org.zkoss.bind.annotation.ContextParam;
@@ -14,8 +16,8 @@ import org.zkoss.bind.annotation.NotifyChange;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.select.annotation.VariableResolver;
 import org.zkoss.zk.ui.select.annotation.WireVariable;
-import org.zkoss.zul.Window;
 import org.zkoss.zul.Messagebox;
+import org.zkoss.zul.Window;
 
 import ar.gde.interoperabilidad.registry.service.EcosistemaService;
 
@@ -29,151 +31,148 @@ public class ABMEcosistemaComposer {
     private Map<String, Object> ecoSeleccionado;
     private Map<String, Object> nuevoEcosistema = new HashMap<>();
 
+    // Propiedades para poblar los combobox
+    private List<String> listaEstados;
+    private List<Map<String, Object>> listaGrupos;
+
+    /**
+     * Se ejecuta al iniciar el zul:
+     * 1) Recupera todos los ecosistemas
+     * 2) Llena listaEstados con “ACTIVO” / “INACTIVO”
+     * 3) Recupera todos los grupos y agrega al inicio “Sin Asignar”
+     */
     @Init
     @NotifyChange("ecosistemas")
     public void init() {
-        // Obtenemos todos los ecosistemas de la BD
         ecosistemas = ecosistemaService.listarTodosEcosistemas();
+        listaEstados = Arrays.asList("ACTIVO", "INACTIVO");
+        listaGrupos = ecosistemaService.listarTodosGrupos();
+        Map<String, Object> sinAsignar = new HashMap<>();
+        sinAsignar.put("id", null);
+        sinAsignar.put("descripcionGrupo", "Sin Asignar");
+        listaGrupos.add(0, sinAsignar);
     }
 
-    /**
-     * Devuelve la lista de ecosistemas para enlazarla al grid del ZUL.
-     */
+    // ---------- Getters para data‐binding ----------
     public List<Map<String, Object>> getEcosistemas() {
         return ecosistemas;
     }
-
-    /**
-     * Devuelve el ecosistema seleccionado (para ver o editar).
-     */
     public Map<String, Object> getEcoSeleccionado() {
         return ecoSeleccionado;
     }
-
-    /**
-     * Devuelve el Map que usaremos como "modelo" para crear un nuevo ecosistema.
-     */
     public Map<String, Object> getNuevoEcosistema() {
         return nuevoEcosistema;
     }
+    public List<String> getListaEstados() {
+        return listaEstados;
+    }
+    public List<Map<String, Object>> getListaGrupos() {
+        return listaGrupos;
+    }
 
-    // -----------------------------------------
-    // COMANDOS PARA ABRIR/CERRAR VENTANAS MODAL
-    // -----------------------------------------
-
-    /**
-     * Abre la ventana modal para agregar un nuevo ecosistema.
-     * En el ZUL está ligado a: onClick="@command('agregarEcosistema')"
-     */
+    // ---------- Abrir/Cerrar pop‐ups ----------
     @Command
-    @NotifyChange({"nuevoEcosistema"})
+    @NotifyChange("nuevoEcosistema")
     public void agregarEcosistema(@ContextParam(ContextType.COMPONENT) Component comp) {
-        // Reiniciar el Map de nuevo ecosistema
+        // Limpiamos el Map para el nuevo ecosistema
         nuevoEcosistema.clear();
-
-        // Mostramos la ventana winAddEcosistema (ahora que está en la misma ventana padre)
+        // Mostramos el popup “winAddEcosistema”
         Window win = (Window) comp.getFellowIfAny("winAddEcosistema");
         if (win != null) {
             win.setVisible(true);
             win.doModal();
         }
     }
-
-    /**
-     * Cierra la ventana de agregar ecosistema sin guardar.
-     */
     @Command
     public void cerrarAgregar(@ContextParam(ContextType.COMPONENT) Component comp) {
         Window win = (Window) comp.getFellowIfAny("winAddEcosistema");
         if (win != null) {
             win.setVisible(false);
-            win.detach();
         }
     }
-
-    /**
-     * Cierra la ventana de ver detalles de ecosistema.
-     */
     @Command
     public void cerrarVer(@ContextParam(ContextType.COMPONENT) Component comp) {
         Window win = (Window) comp.getFellowIfAny("winVerEcosistema");
         if (win != null) {
             win.setVisible(false);
-            win.detach();
         }
     }
-
-    /**
-     * Cierra la ventana de editar ecosistema.
-     */
     @Command
     public void cerrarEditar(@ContextParam(ContextType.COMPONENT) Component comp) {
         Window win = (Window) comp.getFellowIfAny("winEditEcosistema");
         if (win != null) {
             win.setVisible(false);
-            win.detach();
         }
     }
 
-    // -----------------------------------------
-    // COMANDOS PARA CREAR / GUARDAR / REFRESCAR
-    // -----------------------------------------
-
-    /**
-     * Guarda un nuevo ecosistema usando los datos que el usuario llenó
-     * en winAddEcosistema. Luego refresca el listado.
-     */
+    // ---------- Guardar nuevo ecosistema ----------
     @Command
     @NotifyChange("ecosistemas")
     public void guardarNuevoEcosistema() {
-        // Validaciones mínimas: asegurar que venga nombre y grupo
-        if (nuevoEcosistema.get("nombre") == null || nuevoEcosistema.get("grupo") == null) {
-            Messagebox.show("Por favor completa al menos Nombre y Grupo.", "Error",
+        // Validación mínima: el campo “nombre” no puede quedar vacío
+        if (nuevoEcosistema.get("nombre") == null
+                || nuevoEcosistema.get("nombre").toString().trim().isEmpty()) {
+            Messagebox.show("Por favor completa al menos Nombre.", "Error",
                     Messagebox.OK, Messagebox.EXCLAMATION);
             return;
         }
 
-        // Llenar el Map con los valores que el método crearEcosistema espera en SQL:
+        // Map con los datos que espera el servicio
         Map<String, Object> datosParaInsert = new HashMap<>();
-        datosParaInsert.put("nombre", nuevoEcosistema.get("nombre"));                // descripcionEcosistema ⟶ alias 'nombre'
+        datosParaInsert.put("nombre", nuevoEcosistema.get("nombre"));
+        datosParaInsert.put("descripcionEcosistema", nuevoEcosistema.get("descripcionEcosistema"));
         datosParaInsert.put("estado", nuevoEcosistema.get("estado") != null
                 ? nuevoEcosistema.get("estado")
-                : "ACTIVO");                                                       // valor por defecto
-        datosParaInsert.put("usuarioCreacion", nuevoEcosistema.get("usuarioCreacion"));
-                                                                                      // por ej: zkSession.getUsuario()
-        datosParaInsert.put("certificado", nuevoEcosistema.get("certificado"));      // contenido PEM
-        datosParaInsert.put("version", nuevoEcosistema.get("version"));              // versión
-        datosParaInsert.put("grupo", nuevoEcosistema.get("grupo"));                  // descripcionGrupo en REG_GRUPO
+                : "ACTIVO");
 
-        // Llamada al servicio que lo inserta en tabla REG_ECOSISTEMA
+        // ← Asegurarnos de que nunca sea null. Si no existe, uso "SYSTEM" como valor por defecto.
+        Object usr = nuevoEcosistema.get("usuarioCreacion");
+        if (usr == null || usr.toString().trim().isEmpty()) {
+            datosParaInsert.put("usuarioCreacion", "SYSTEM");
+        } else {
+            datosParaInsert.put("usuarioCreacion", usr);
+        }
+
+        datosParaInsert.put("certificado", nuevoEcosistema.get("certificado"));
+        datosParaInsert.put("version", nuevoEcosistema.get("version"));
+
+        Object seleccion = nuevoEcosistema.get("grupo");
+        if (seleccion != null && !"Sin Asignar".equals(seleccion.toString())) {
+            datosParaInsert.put("grupo", seleccion);
+        } else {
+            datosParaInsert.put("grupo", null);
+        }
+
+        // Llamamos al servicio para insertar en BD
         ecosistemaService.crearEcosistema(datosParaInsert);
 
-        // Después de insertar, recargamos la lista completa
+        // Refrescamos la lista completa de ecosistemas
         ecosistemas = ecosistemaService.listarTodosEcosistemas();
 
-        // Cerramos la ventana modal
         Messagebox.show("Ecosistema creado correctamente.", "Información",
                 Messagebox.OK, Messagebox.INFORMATION);
-        // Aquí se cierra la ventana winAddEcosistema de forma manual:
-        // Puedes reutilizar cerrarAgregar(comp) si prefieres
     }
 
-    // -----------------------------------------
-    // COMANDOS PARA VISUALIZAR / PROBAR
-    // -----------------------------------------
-
     /**
-     * Abre la ventana modal que muestra los detalles de un ecosistema.
-     * El parámetro "item" viene del each=each de la Grid.
+     * NUEVO COMANDO: llama a guardarNuevoEcosistema(), y luego cierra el popup “Agregar”
      */
+    @Command
+    @NotifyChange("ecosistemas")
+    public void guardarYCerrar(@ContextParam(ContextType.COMPONENT) Component comp) {
+        guardarNuevoEcosistema();
+        Window win = (Window) comp.getFellowIfAny("winAddEcosistema");
+        if (win != null) {
+            win.setVisible(false);
+        }
+    }
+
+    // ---------- Ver detalles ----------
     @Command
     @NotifyChange("ecoSeleccionado")
     public void verEcosistema(@BindingParam("item") Map<String, Object> item,
                               @ContextParam(ContextType.COMPONENT) Component comp) {
-        // Clonar los datos (si quieres evitar editar accidentalmente el listado)
+        // Clonamos el Map para no alterar la lista original
         this.ecoSeleccionado = new HashMap<>(item);
-
-        // Abrimos winVerEcosistema
         Window win = (Window) comp.getFellowIfAny("winVerEcosistema");
         if (win != null) {
             win.setVisible(true);
@@ -181,10 +180,7 @@ public class ABMEcosistemaComposer {
         }
     }
 
-    /**
-     * Llama a probarConectividad para el ecosistema enviado. Muestra un Messagebox
-     * con el mensaje ok/falla.
-     */
+    // ---------- Probar conectividad ----------
     @Command
     public void probarEcosistema(@BindingParam("item") Map<String, Object> item) {
         String nombreEco = (String) item.get("nombre");
@@ -199,22 +195,12 @@ public class ABMEcosistemaComposer {
         }
     }
 
-    // -----------------------------------------
-    // COMANDOS PARA EDITAR / ACTUALIZAR
-    // -----------------------------------------
-
-    /**
-     * Abre la ventana modal para editar los datos de un ecosistema.
-     * Rellena ecoSeleccionado con la data actual (que luego se enlaza en winEditEcosistema).
-     */
+    // ---------- Editar ecosistema ----------
     @Command
     @NotifyChange("ecoSeleccionado")
     public void editarEcosistema(@BindingParam("item") Map<String, Object> item,
                                  @ContextParam(ContextType.COMPONENT) Component comp) {
-        // Clonamos el Map (para no alterar el listado en tiempo real)
         this.ecoSeleccionado = new HashMap<>(item);
-
-        // Abrimos winEditEcosistema
         Window win = (Window) comp.getFellowIfAny("winEditEcosistema");
         if (win != null) {
             win.setVisible(true);
@@ -222,47 +208,47 @@ public class ABMEcosistemaComposer {
         }
     }
 
-    /**
-     * Guarda los cambios de ecoSeleccionado (editando en la BD) y refresca la lista.
-     */
     @Command
     @NotifyChange("ecosistemas")
     public void guardarEcosistema() {
-        if (ecoSeleccionado == null || ecoSeleccionado.get("id") == null) {
+        if (ecoSeleccionado == null || ecoSeleccionado.get("ID") == null) {
             Messagebox.show("No hay ecosistema seleccionado para editar.", "Error",
-                    Messagebox.OK, Messagebox.EXCLAMATION);
+                            Messagebox.OK, Messagebox.EXCLAMATION);
             return;
         }
 
-        // Preparar el Map de datos para actualizar
         Map<String, Object> datosParaUpdate = new HashMap<>();
-        datosParaUpdate.put("id", ecoSeleccionado.get("id"));                       // id
-        datosParaUpdate.put("nombre", ecoSeleccionado.get("nombre"));               // descripcionEcosistema
-        datosParaUpdate.put("estado", ecoSeleccionado.get("estado"));               // estado
-        datosParaUpdate.put("usuarioModificacion", ecoSeleccionado.get("usuarioModificacion"));
-                                                                                     // por ej: usuario logueado
-        datosParaUpdate.put("certificado", ecoSeleccionado.get("certificado"));     // certificado PEM actualizado
-        datosParaUpdate.put("version", ecoSeleccionado.get("version"));             // versión
-        datosParaUpdate.put("grupo", ecoSeleccionado.get("nombreGrupo"));            // nombreGrupo actual
+        datosParaUpdate.put("id", ecoSeleccionado.get("ID"));
+        datosParaUpdate.put("nombre", ecoSeleccionado.get("NOMBRE"));
+        datosParaUpdate.put("descripcionEcosistema", ecoSeleccionado.get("DESCRIPCIONECOSISTEMA"));
+        datosParaUpdate.put("estado", ecoSeleccionado.get("ESTADO"));
+        datosParaUpdate.put("usuarioModificacion", ecoSeleccionado.get("USUARIOMODIFICACION"));
+        datosParaUpdate.put("certificado", ecoSeleccionado.get("CERTIFICADO"));
+        datosParaUpdate.put("version", ecoSeleccionado.get("VERSION"));
+        datosParaUpdate.put("grupo", ecoSeleccionado.get("NOMBREGRUPO"));
 
-        // Llamada al servicio para actualizar REG_ECOSISTEMA
         ecosistemaService.actualizarEcosistema(datosParaUpdate);
-
-        // Refrescamos el listado completo
         ecosistemas = ecosistemaService.listarTodosEcosistemas();
 
         Messagebox.show("Ecosistema actualizado correctamente.", "Información",
-                Messagebox.OK, Messagebox.INFORMATION);
-        // Aquí se cerraría la ventana winEditEcosistema
+                        Messagebox.OK, Messagebox.INFORMATION);
     }
 
-    // -----------------------------------------
-    // COMANDOS PARA DAR DE BAJA / DAR DE ALTA
-    // -----------------------------------------
 
     /**
-     * Cambia el estado del ecosistema a 'ACTIVO' vía servicio, y refresca la lista.
+     * NUEVO COMANDO: llama a guardarEcosistema(), y luego cierra el popup “Editar”
      */
+    @Command
+    @NotifyChange("ecosistemas")
+    public void guardarEditarYCerrar(@ContextParam(ContextType.COMPONENT) Component comp) {
+        guardarEcosistema();
+        Window win = (Window) comp.getFellowIfAny("winEditEcosistema");
+        if (win != null) {
+            win.setVisible(false);
+        }
+    }
+
+    // ---------- Dar de alta / dar de baja ----------
     @Command
     @NotifyChange("ecosistemas")
     public void altaEcosistema(@BindingParam("item") final Map<String, Object> item) {
@@ -274,8 +260,8 @@ public class ABMEcosistemaComposer {
             Messagebox.QUESTION,
             new org.zkoss.zk.ui.event.EventListener<org.zkoss.zk.ui.event.Event>() {
                 @Override
-                public void onEvent(org.zkoss.zk.ui.event.Event event) throws Exception {
-                    if ("onYes".equals(event.getName())) {
+                public void onEvent(org.zkoss.zk.ui.event.Event evt) throws Exception {
+                    if ("onYes".equals(evt.getName())) {
                         ecosistemaService.altaEcosistema(
                             nombreEco,
                             (String) item.get("usuarioModificacion")
@@ -293,9 +279,6 @@ public class ABMEcosistemaComposer {
         );
     }
 
-    /**
-     * Cambia el estado del ecosistema a 'INACTIVO' vía servicio, y refresca la lista.
-     */
     @Command
     @NotifyChange("ecosistemas")
     public void bajaEcosistema(@BindingParam("item") final Map<String, Object> item) {
@@ -307,8 +290,8 @@ public class ABMEcosistemaComposer {
             Messagebox.QUESTION,
             new org.zkoss.zk.ui.event.EventListener<org.zkoss.zk.ui.event.Event>() {
                 @Override
-                public void onEvent(org.zkoss.zk.ui.event.Event event) throws Exception {
-                    if ("onYes".equals(event.getName())) {
+                public void onEvent(org.zkoss.zk.ui.event.Event evt) throws Exception {
+                    if ("onYes".equals(evt.getName())) {
                         ecosistemaService.bajaEcosistema(nombreEco);
                         ecosistemas = ecosistemaService.listarTodosEcosistemas();
                         Messagebox.show(
@@ -323,10 +306,7 @@ public class ABMEcosistemaComposer {
         );
     }
 
-    // -----------------------------------------
-    // Otros getters/setters si hicieran falta
-    // -----------------------------------------
-
+    // ---------- Setters (opcionales) ----------
     public void setEcosistemas(List<Map<String, Object>> ecosistemas) {
         this.ecosistemas = ecosistemas;
     }

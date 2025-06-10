@@ -4,11 +4,31 @@
                              http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
          version="3.0">
 
+  <!-- 1) Página de bienvenida -->
   <welcome-file-list>
     <welcome-file>panelPrincipal.zul</welcome-file>
   </welcome-file-list>
 
-  <!-- 1) ZK loader para *.zul -->
+  <!-- 2) Contexto de Spring -->
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+      /WEB-INF/spring-beans.xml,
+      /WEB-INF/classes/applicationContext.xml
+    </param-value>
+  </context-param>
+
+  <!-- 3) Arranca Spring -->
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener>
+
+  <!-- 4) Jersey–Spring -->
+  <listener>
+    <listener-class>org.glassfish.jersey.server.spring.SpringLifecycleListener</listener-class>
+  </listener>
+
+  <!-- 5) ZK: *.zul -->
   <servlet>
     <servlet-name>zkLoader</servlet-name>
     <servlet-class>org.zkoss.zk.ui.http.DHtmlLayoutServlet</servlet-class>
@@ -23,7 +43,7 @@
     <url-pattern>*.zul</url-pattern>
   </servlet-mapping>
 
-  <!-- 2) ZK update engine (corregido el paquete) -->
+  <!-- 6) ZK AJAX -->
   <servlet>
     <servlet-name>zkUpdate</servlet-name>
     <servlet-class>org.zkoss.zk.au.http.DHtmlUpdateServlet</servlet-class>
@@ -34,14 +54,29 @@
     <url-pattern>/zkau/*</url-pattern>
   </servlet-mapping>
 
-  <!-- 3) Jersey Servlet para /api/v1/* -->
+  <!-- 7) Jersey + Spring + JSON → /api/v1/* -->
   <servlet>
     <servlet-name>JerseyServlet</servlet-name>
     <servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+
+    <!-- Escanea tu paquete REST y el provider de Jackson -->
     <init-param>
       <param-name>jersey.config.server.provider.packages</param-name>
-      <param-value>ar.gde.interoperabilidad.registry.restful</param-value>
+      <param-value>
+        ar.gob.gde.interoperabilidad.registry.restful,
+        org.glassfish.jersey.jackson
+      </param-value>
     </init-param>
+
+    <!-- Registra explícitamente tu recurso y la feature de JSON -->
+    <init-param>
+      <param-name>jersey.config.server.provider.classnames</param-name>
+      <param-value>
+        ar.gob.gde.interoperabilidad.registry.restful.RegistryService,
+        org.glassfish.jersey.jackson.JacksonFeature
+      </param-value>
+    </init-param>
+
     <load-on-startup>3</load-on-startup>
   </servlet>
   <servlet-mapping>
@@ -49,20 +84,4 @@
     <url-pattern>/api/v1/*</url-pattern>
   </servlet-mapping>
 
-  <!-- 4) Spring ContextLoaderListener -->
-  <listener>
-    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-  </listener>
-  <context-param>
-    <param-name>contextConfigLocation</param-name>
-    <param-value>/WEB-INF/spring-beans.xml</param-value>
-  </context-param>
-
-  <listener>
-    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-  </listener>
-  <context-param>
-    <param-name>contextConfigLocation</param-name>
-    <param-value>/WEB-INF/classes/applicationContext.xml</param-value>
-  </context-param>
 </web-app>

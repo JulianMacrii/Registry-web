@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zk xmlns="http://www.zkoss.org/2005/zul"
-    xmlns:n="native"
-    viewModel="@id('vm') @init('ar.gde.interoperabilidad.registry.zk.ABMEcosistemaComposer')">
+    xmlns:n="native">
 
   <!-- =============================== -->
   <!-- 1) ESTILOS GLOBALES            -->
@@ -20,8 +19,9 @@
       font-size: 12px;
     }
     .btnSmall img {
-      max-width: 16px;
-      max-height: 16px;
+      /* Íconos de botones aún más pequeños */
+      max-width: 12px;
+      max-height: 12px;
       vertical-align: middle;
       margin-right: 4px;
     }
@@ -37,11 +37,12 @@
           border="normal"
           title="Administración de Ecosistemas"
           width="95%"
-          vflex="1">
+          vflex="1"
+          apply="org.zkoss.bind.BindComposer"
+          viewModel="@id('vm') @init('ar.gde.interoperabilidad.registry.zk.ABMEcosistemaComposer')">
 
     <vlayout width="100%" vflex="1" spacing="5px">
-
-      <!-- 2.1) Etiqueta de título de la sección (opcional) -->
+      <!-- 2.1) Etiqueta de título -->
       <label value="Lista de Ecosistemas"
              style="font-weight:bold; font-size:14px;" />
 
@@ -53,9 +54,8 @@
             emptyMessage="No hay Ecosistemas cargados."
             model="@load(vm.ecosistemas)">
 
-        <!-- ─── 1) AUXHEAD que ocupa las 8 columnas ─── -->
+        <!-- 1) AUXHEAD con botón “Agregar” -->
         <auxhead>
-          <!-- colspan="8" porque tienes 8 columnas en total -->
           <auxheader colspan="8">
             <hbox width="100%" pack="end" style="padding:4px 0px;">
               <button
@@ -68,7 +68,7 @@
           </auxheader>
         </auxhead>
 
-        <!-- ─── 2) Definición de las columnas ─── -->
+        <!-- 2) Definición de las columnas -->
         <columns menupopup="auto">
           <column label="Nombre"           sort="auto" width="120px"/>
           <column label="Descripción"      sort="auto" width="200px"/>
@@ -77,10 +77,10 @@
           <column label="Fecha Mod."       sort="auto" width="140px"/>
           <column label="Usuario Creación" sort="auto" width="120px"/>
           <column label="Usuario Mod."     sort="auto" width="120px"/>
-          <column label="Acciones"         width="200px" align="center"/>
+          <column label="Acciones"         width="350px" align="center"/>
         </columns>
 
-        <!-- ─── 3) Filas (rows) ─── -->
+        <!-- 3) Filas (rows) -->
         <rows>
           <template name="model" var="each">
             <row>
@@ -127,16 +127,16 @@
     </vlayout>
 
     <!-- ────────────────────────────────────────────────────────── -->
-    <!-- 3) POP-UP: “Agregar Ecosistema” — ahora “hermano” directo  -->
+    <!-- 3) POP-UP: “Agregar Ecosistema”                          -->
     <!-- ────────────────────────────────────────────────────────── -->
     <window id="winAddEcosistema"
             title="Agregar Ecosistema"
             border="normal"
             width="600px"
-            closable="true"
             mode="modal"
             position="center"
-            visible="false">
+            visible="false"
+            onClose="self.setVisible(false); event.stopPropagation()">
 
       <grid width="100%">
         <columns>
@@ -173,16 +173,24 @@
             <textbox multiline="true" rows="3"
                      value="@bind(vm.nuevoEcosistema['certificado'])"/>
           </row>
+          <!-- Aquí insertamos el floppy con la clase smallImage -->
+          <row class="modalRow">
+            <label/>
+            <image src="/imgs/floppy.png" class="smallImage"/>
+          </row>
         </rows>
       </grid>
 
       <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
+        <!-- Solo un comando: guardarYCerrar -->
         <button label="Guardar"
                 image="/imgs/save.png"
-                onClick="@command('guardarNuevoEcosistema')"/>
+                onClick="@command('guardarYCerrar')" 
+                class="btnSmall"/>
         <button label="Cancelar"
                 image="/imgs/times.png"
-                onClick="@command('cerrarAgregar')"/>
+                onClick="@command('cerrarAgregar')" 
+                class="btnSmall"/>
       </hbox>
     </window>
 
@@ -190,13 +198,13 @@
     <!-- 4) POP-UP: “Ver Detalle de Ecosistema”                   -->
     <!-- ────────────────────────────────────────────────────────── -->
     <window id="winVerEcosistema"
-            title="Detalles de Ecosistema"
-            border="normal"
-            width="600px"
-            closable="true"
-            mode="modal"
-            position="center"
-            visible="false">
+        title="Detalles de Ecosistema"
+        border="normal"
+        width="600px"
+        mode="modal"
+        position="center"
+        visible="false"
+        onClose="self.setVisible(false); event.stopPropagation()">
 
       <grid width="100%">
         <columns>
@@ -207,52 +215,52 @@
           <row class="modalRow">
             <label value="Nombre"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['nombre'])"/>
+                    value="@bind(vm.ecoSeleccionado['NOMBRE'])"/>
           </row>
           <row class="modalRow">
             <label value="Descripción"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['descripcionEcosistema'])"/>
+                    value="@bind(vm.ecoSeleccionado['DESCRIPCIONECOSISTEMA'])"/>
           </row>
           <row class="modalRow">
             <label value="Estado"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['estado'])"/>
+                    value="@bind(vm.ecoSeleccionado['ESTADO'])"/>
           </row>
           <row class="modalRow">
             <label value="Grupo"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['nombreGrupo'])"/>
+                    value="@bind(vm.ecoSeleccionado['NOMBREGRUPO'])"/>
           </row>
           <row class="modalRow">
             <label value="Versión"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['version'])"/>
+                    value="@bind(vm.ecoSeleccionado['VERSION'])"/>
           </row>
           <row class="modalRow">
             <label value="Certificado"/>
             <textbox readonly="true" multiline="true" rows="3"
-                     value="@bind(vm.ecoSeleccionado['certificado'])"/>
+                    value="@bind(vm.ecoSeleccionado['CERTIFICADO'])"/>
           </row>
           <row class="modalRow">
             <label value="Fecha Creación"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['fechaCreacion'])"/>
+                    value="@bind(vm.ecoSeleccionado['FECHACREACION'])"/>
           </row>
           <row class="modalRow">
             <label value="Fecha Modificación"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['fechaModificacion'])"/>
+                    value="@bind(vm.ecoSeleccionado['FECHAMODIFICACION'])"/>
           </row>
           <row class="modalRow">
             <label value="Usuario Creación"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['usuarioCreacion'])"/>
+                    value="@bind(vm.ecoSeleccionado['USUARIOCREACION'])"/>
           </row>
           <row class="modalRow">
             <label value="Usuario Modificación"/>
             <textbox readonly="true"
-                     value="@bind(vm.ecoSeleccionado['usuarioModificacion'])"/>
+                    value="@bind(vm.ecoSeleccionado['USUARIOMODIFICACION'])"/>
           </row>
         </rows>
       </grid>
@@ -260,70 +268,72 @@
       <hbox width="100%" pack="end" style="margin-top:8px;">
         <button label="Cerrar"
                 iconSclass="z-icon-times"
-                onClick="@command('cerrarVer')"/>
+                onClick="@command('cerrarVer')" 
+                class="btnSmall"/>
       </hbox>
     </window>
+
 
     <!-- ────────────────────────────────────────────────────────── -->
     <!-- 5) POP-UP: “Editar Ecosistema”                            -->
     <!-- ────────────────────────────────────────────────────────── -->
-    <window id="winEditEcosistema"
-            title="Editar Ecosistema"
-            border="normal"
-            width="600px"
-            closable="true"
-            mode="modal"
-            position="center"
-            visible="false">
+  <window id="winEditEcosistema"
+          title="Editar Ecosistema"
+          border="normal"
+          width="600px"
+          mode="modal"
+          position="center"
+          visible="false"
+          onClose="self.setVisible(false); event.stopPropagation()">
 
-      <grid width="100%">
-        <columns>
-          <column label="Campo" width="150px"/>
-          <column label="Valor"  width="*"/>
-        </columns>
-        <rows>
-          <row class="modalRow">
-            <label value="Nombre"/>
-            <textbox value="@bind(vm.ecoSeleccionado['nombre'])"/>
-          </row>
-          <row class="modalRow">
-            <label value="Descripción"/>
-            <textbox value="@bind(vm.ecoSeleccionado['descripcionEcosistema'])"/>
-          </row>
-          <row class="modalRow">
-            <label value="Estado"/>
-            <combobox model="@load(vm.listaEstados)"
-                      value="@bind(vm.ecoSeleccionado['estado'])"
-                      readonly="true"/>
-          </row>
-          <row class="modalRow">
-            <label value="Grupo"/>
-            <combobox model="@load(vm.listaGrupos)"
-                      value="@bind(vm.ecoSeleccionado['nombreGrupo'])"
-                      readonly="true"/>
-          </row>
-          <row class="modalRow">
-            <label value="Versión"/>
-            <intbox value="@bind(vm.ecoSeleccionado['version'])"/>
-          </row>
-          <row class="modalRow">
-            <label value="Certificado"/>
-            <textbox multiline="true" rows="3"
-                     value="@bind(vm.ecoSeleccionado['certificado'])"/>
-          </row>
-        </rows>
-      </grid>
+    <grid width="100%">
+      <columns>
+        <column label="Campo" width="150px"/>
+        <column label="Valor"  width="*"/>
+      </columns>
+      <rows>
+        <row class="modalRow">
+          <label value="Nombre"/>
+          <textbox value="@bind(vm.ecoSeleccionado['NOMBRE'])"/>
+        </row>
+        <row class="modalRow">
+          <label value="Descripción"/>
+          <textbox value="@bind(vm.ecoSeleccionado['DESCRIPCIONECOSISTEMA'])"/>
+        </row>
+        <row class="modalRow">
+          <label value="Estado"/>
+          <combobox model="@load(vm.listaEstados)"
+                    value="@bind(vm.ecoSeleccionado['ESTADO'])"/>
+        </row>
+        <row class="modalRow">
+          <label value="Grupo"/>
+          <combobox model="@load(vm.listaGrupos)"
+                    value="@bind(vm.ecoSeleccionado['NOMBREGRUPO'])"/>
+        </row>
+        <row class="modalRow">
+          <label value="Versión"/>
+          <intbox value="@bind(vm.ecoSeleccionado['VERSION'])"/>
+        </row>
+        <row class="modalRow">
+          <label value="Certificado"/>
+          <textbox multiline="true" rows="3"
+                  value="@bind(vm.ecoSeleccionado['CERTIFICADO'])"/>
+        </row>
+      </rows>
+    </grid>
 
-      <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
-        <button label="Guardar"
-                image="/imgs/save.png"
-                onClick="@command('guardarEcosistema')"/>
-        <button label="Cancelar"
-                image="/imgs/times.png"
-                onClick="@command('cerrarEditar')"/>
-      </hbox>
-    </window>
-    <!-- ────────────────────────────────────────────────────────── -->
+    <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
+      <button label="Guardar"
+              image="/imgs/save.png"
+              onClick="@command('guardarEditarYCerrar')"
+              class="btnSmall"/>
+      <button label="Cancelar"
+              image="/imgs/times.png"
+              onClick="@command('cerrarEditar')"
+              class="btnSmall"/>
+    </hbox>
+  </window>
+
 
   </window> <!-- fin de winABMEcosistema -->
 </zk>

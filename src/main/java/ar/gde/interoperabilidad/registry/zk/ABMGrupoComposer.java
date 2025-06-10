@@ -24,6 +24,9 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
     private Grid gridGrupos;
     private ListModelList<Map<String, Object>> gruposModel;
 
+    public ListModelList<Map<String, Object>> getGruposModel() {
+        return gruposModel;
+    }
     // Ventanas y campos para “Agregar” y “Editar”
     @Wire
     private Window winAddGrupo;

@@ -17,42 +17,41 @@
 
   <dependencies>
     <!-- 1) ZK 8 Core + Add-ons -->
-	<dependency>
-	  <groupId>org.zkoss.zk</groupId>
-	  <artifactId>zk</artifactId>
-	  <version>8.0.2.2</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.zkoss.zk</groupId>
-	  <artifactId>zul</artifactId>
-	  <version>8.0.2.2</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.zkoss.zk</groupId>
-	  <artifactId>zkplus</artifactId>
-	  <version>8.0.2.2</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.zkoss.common</groupId>
-	  <artifactId>zcommon</artifactId>
-	  <version>8.0.2.2</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.zkoss.common</groupId>
-	  <artifactId>zweb</artifactId>
-	  <version>8.0.2.2</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.zkoss.zk</groupId>
-	  <artifactId>zhtml</artifactId>
-	  <version>9.6.0.2</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.zkoss.zk</groupId>
-	  <artifactId>zkbind</artifactId>
-	  <version>8.0.2.2</version>
-	</dependency>
-
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zk</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zul</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zkplus</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.common</groupId>
+      <artifactId>zcommon</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.common</groupId>
+      <artifactId>zweb</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zhtml</artifactId>
+      <version>9.6.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.zkoss.zk</groupId>
+      <artifactId>zkbind</artifactId>
+      <version>8.0.2.2</version>
+    </dependency>
 
     <!-- 2) ZK Add-ons Extras -->
     <dependency>
@@ -76,7 +75,7 @@
       <version>3.2.0</version>
     </dependency>
 
-    <!-- 3) Spring Framework -->
+    <!-- 3) Spring Framework 3.x -->
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-web</artifactId>
@@ -98,36 +97,36 @@
       <version>3.2.3.RELEASE</version>
     </dependency>
 
-    <!-- 4) JAX-RS / Jersey 2.25.1 (Java 7 / Tomcat 7) -->
-	<dependency>
-	  <groupId>javax.ws.rs</groupId>
-	  <artifactId>javax.ws.rs-api</artifactId>
-	  <version>2.0</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.glassfish.jersey.core</groupId>
-	  <artifactId>jersey-common</artifactId>
-	  <version>2.25.1</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.glassfish.jersey.core</groupId>
-	  <artifactId>jersey-client</artifactId>
-	  <version>2.25.1</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.glassfish.jersey.containers</groupId>
-	  <artifactId>jersey-container-servlet-core</artifactId>
-	  <version>2.25.1</version>
-	</dependency>
-	<dependency>
-	  <groupId>org.glassfish.jersey.containers</groupId>
-	  <artifactId>jersey-container-servlet-core</artifactId>
-	  <version>2.25.1</version>
-	</dependency>
+    <!-- 4) JAX-RS API -->
+    <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.0</version>
+    </dependency>
 
+    <!-- 5) Jersey 2.25.1 -->
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-common</artifactId>
+      <version>2.25.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.core</groupId>
+      <artifactId>jersey-server</artifactId>
+      <version>2.25.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.containers</groupId>
+      <artifactId>jersey-container-servlet</artifactId>
+      <version>2.25.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.jersey.ext</groupId>
+      <artifactId>jersey-spring3</artifactId>
+      <version>2.25.1</version>
+    </dependency>
 
-
-    <!-- 5) Servlet API -->
+    <!-- 6) Servlet API (provided by Tomcat) -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
@@ -135,19 +134,33 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- 6) Oracle JDBC driver (ojdbc6) -->
-	<dependency>
-	  <groupId>com.oracle</groupId>
-	  <artifactId>ojdbc6</artifactId>
-	  <version>11.2.0.4</version>
-	  <!-- Sin <scope>: equivale a “compile” y empaqueta el JAR en el WAR -->
-	</dependency>
+    <!-- 7) Oracle JDBC driver -->
+    <dependency>
+      <groupId>com.oracle</groupId>
+      <artifactId>ojdbc6</artifactId>
+      <version>11.2.0.4</version>
+    </dependency>
+
+
+      <dependency>
+    <groupId>org.glassfish.jersey.core</groupId>
+    <artifactId>jersey-client</artifactId>
+    <version>2.25.1</version>
+  </dependency>
+
+  <!-- JSON‐Jackson para Jersey -->
+  <dependency>
+    <groupId>org.glassfish.jersey.media</groupId>
+    <artifactId>jersey-media-json-jackson</artifactId>
+    <version>2.25.1</version>
+  </dependency>
+  
   </dependencies>
 
   <build>
     <finalName>registry-web</finalName>
     <plugins>
-      <!-- Compilador Java 1.7 -->
+      <!-- Java 1.7 compiler -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -155,7 +168,7 @@
         <configuration>
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
-          <encoding>UTF-8</encoding>
+          <encoding>${project.build.sourceEncoding}</encoding>
         </configuration>
       </plugin>
 

@@ -17,10 +17,10 @@
     <!-- 1) Definimos el DataSource Oracle apuntando a tu XE local (PDB XEPDB1) -->
     <bean id="dataSource" class="oracle.jdbc.pool.OracleDataSource" destroy-method="close">
         <!-- URL de conexión: thin driver, host, puerto, SERVICE_NAME (PDB) -->
-        <property name="URL" value="jdbc:oracle:thin:@localhost:1521/XEPDB1" />
+        <property name="URL" value="jdbc:oracle:thin:@172.23.15.167:1521/XEPDB1" />
         <!-- Credenciales del usuario/schema JULIAN -->
         <property name="user" value="JULIAN" />
-        <property name="password" value="Julian123" />
+        <property name="password" value="America12" />
         <!-- Propiedades adicionales opcionales -->
         <property name="connectionCachingEnabled" value="true" />
         <property name="fastConnectionFailoverEnabled" value="false" />

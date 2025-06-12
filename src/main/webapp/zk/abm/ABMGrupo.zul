@@ -25,12 +25,14 @@
   <!-- 2) VENTANA PRINCIPAL: “Administración de Grupos” -->
   <!-- ================================================= -->
   <window id="winABMGrupo"
-          apply="ar.gde.interoperabilidad.registry.zk.ABMGrupoComposer"
-          border="normal"
-          title="Administración de Grupos"
-          width="95%"        
-          position="center"
-          vflex="1">
+        apply="org.zkoss.bind.BindComposer"
+        border="normal"
+        title="Administración de Grupos"
+        width="95%"        
+        position="center"
+        vflex="1"
+        viewModel="@id('vm') @init('ar.gde.interoperabilidad.registry.zk.ABMGrupoComposer')"
+>
 
     <vlayout width="100%" vflex="1" spacing="5px">
 
@@ -40,27 +42,25 @@
 
       <!-- 2.2) Grilla paginada de grupos -->
       <grid id="gridGrupos"
+            model="@load(vm.grupos)"
             width="100%"         
             mold="paging"
             pageSize="10"
             vflex="1"
-            emptyMessage="No hay Grupos cargados."
-            model="@load(vm.gruposModel)">
+            emptyMessage="No hay Grupos cargados.">
 
-        <!-- 2.2.1) AUXHEAD con botón -->
         <auxhead>
           <auxheader colspan="8">
             <hbox width="100%" pack="end" style="padding:4px 0px;">
               <button id="btnAbrirAddG"
                       class="btnSmall"
                       label="Agregar Grupo"
-                      image="/imgs/add.png"
-                      onClick="@command('abrirAgregarGrupo')" />
+                      image="/imgs/add.png" 
+                      onClick="@command('abrirAgregarGrupo')"/>
             </hbox>
           </auxheader>
         </auxhead>
 
-        <!-- 2.2.2) Definición columnas -->
         <columns menupopup="auto">
           <column label="ID"                 width="60px"/>
           <column label="Nombre"             width="200px"/>
@@ -72,7 +72,6 @@
           <column label="Acciones"           width="180px" align="center"/>
         </columns>
 
-        <!-- 2.2.3) Filas (rows) -->
         <rows>
           <template name="model" var="each">
             <row>
@@ -83,13 +82,11 @@
               <label value="@load(each['fechaCreacion'])"/>
               <label value="@load(each['fechaModificacion'])"/>
               <label value="@load(each['usuarioCreacion'])"/>
-
-              <!-- Botones: Editar / Dar baja o Dar alta -->
               <hlayout spacing="4px">
                 <button id="btnEditarG"
                         class="btnSmall"
                         label="Editar"
-                        image="/imgs/edit.png"
+                        image="/imgs/edit.png" 
                         onClick="@command('editarGrupo', item=each)"/>
                 <button id="btnBajaG"
                         class="btnSmall"
@@ -109,112 +106,105 @@
         </rows>
       </grid>
     </vlayout>
+
+    <!-- ============================================= -->
+    <!-- 3) POP-UP: “Agregar Grupo”                    -->
+    <!-- ============================================= -->
+    <window id="winAddGrupo"
+            title="Agregar Grupo"
+            border="normal"
+            width="500px"
+            height="auto"
+            mode="modal"
+            position="center"
+            visible="false"
+            onClose="self.setVisible(false); event.stopPropagation()">
+
+      <grid width="100%">
+        <columns>
+          <column label="Campo" width="150px"/>
+          <column label="Valor"  width="*"/>
+        </columns>
+        <rows>
+          <row>
+            <label value="Nombre"/>
+            <textbox id="txtNombreAddG" value="@bind(vm.nuevoGrupo['nombre'])"/>
+          </row>
+          <row>
+            <label value="Descripción"/>
+            <textbox id="txtDescAddG" value="@bind(vm.nuevoGrupo['descripcionGrupo'])"/>
+          </row>
+          <row>
+            <label value="Estado"/>
+            <combobox id="cmbEstadoAddG" model="@load(vm.listaEstados)" value="@bind(vm.nuevoGrupo['estado'])">
+              <comboitem label="ACTIVO" value="ACTIVO"/>
+              <comboitem label="INACTIVO" value="INACTIVO"/>
+            </combobox>
+          </row>
+        </rows>
+      </grid>
+
+      <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
+        <button id="btnGuardarAddG"
+          class="btnSmall"
+          label="Guardar"
+          image="/imgs/save.png" 
+          onClick="@command('guardarNuevoGrupo')"/>
+        <button label="Cancelar"
+                class="btnSmall"
+                image="/imgs/times.png"
+                onClick="winAddGrupo.onClose()"/>
+      </hbox>
+    </window>
+
+    <!-- ============================================= -->
+    <!-- 4) POP-UP: “Editar Grupo”                     -->
+    <!-- ============================================= -->
+    <window id="winEditGrupo"
+            title="Editar Grupo"
+            border="normal"
+            width="500px"
+            height="auto"
+            mode="modal"
+            position="center"
+            visible="false"
+            onClose="self.setVisible(false); event.stopPropagation()">
+
+      <grid width="100%">
+        <columns>
+          <column label="Campo" width="150px"/>
+          <column label="Valor"  width="*"/>
+        </columns>
+        <rows>
+          <row>
+            <label value="Nombre"/>
+            <textbox id="txtNombreEditG"/>
+          </row>
+          <row>
+            <label value="Descripción"/>
+            <textbox id="txtDescEditG"/>
+          </row>
+          <row>
+            <label value="Estado"/>
+            <combobox id="cmbEstadoEditG" readonly="true">
+              <comboitem label="ACTIVO" value="ACTIVO"/>
+              <comboitem label="INACTIVO" value="INACTIVO"/>
+            </combobox>
+          </row>
+        </rows>
+      </grid>
+
+      <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
+        <button id="btnGuardarEditG"
+                class="btnSmall"
+                label="Guardar"
+                image="/imgs/save.png" />
+        <button label="Cancelar"
+                class="btnSmall"
+                image="/imgs/times.png"
+                onClick="winEditGrupo.onClose()"/>
+      </hbox>
+    </window>
+
   </window>
-
-  <!-- ============================================= -->
-  <!-- 3) POP-UP: “Agregar Grupo”                    -->
-  <!-- ============================================= -->
-  <window id="winAddGrupo"
-          title="Agregar Grupo"
-          border="normal"
-          width="500px"
-          height="auto"
-          mode="modal"
-          position="center"
-          visible="false"
-          onClose="self.setVisible(false); event.stopPropagation()">
-
-    <grid width="100%">
-      <columns>
-        <column label="Campo" width="150px"/>
-        <column label="Valor"  width="*"/>
-      </columns>
-      <rows>
-        <row>
-          <label value="Nombre"/>
-          <textbox id="txtNombreAddG"
-                   value="@bind(vm.nuevoGrupo.nombre)"
-                   placeholder="Ingrese nombre"/>
-        </row>
-        <row>
-          <label value="Descripción"/>
-          <textbox id="txtDescAddG"
-                   value="@bind(vm.nuevoGrupo.descripcionGrupo)"
-                   placeholder="Ingrese descripción"/>
-        </row>
-        <row>
-          <label value="Estado"/>
-          <combobox id="cmbEstadoAddG"
-                    model="@load(vm.listaEstados)"
-                    value="@bind(vm.nuevoGrupo.estado)"
-                    readonly="true"/>
-        </row>
-      </rows>
-    </grid>
-
-    <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
-      <button id="btnGuardarAddG"
-              class="btnSmall"
-              label="Guardar"
-              image="/imgs/save.png"
-              onClick="@command('guardarNuevoGrupo')"/>
-      <button label="Cancelar"
-              class="btnSmall"
-              image="/imgs/times.png"
-              onClick="winAddGrupo.onClose()"/>
-    </hbox>
-  </window>
-
-  <!-- ============================================= -->
-  <!-- 4) POP-UP: “Editar Grupo”                     -->
-  <!-- ============================================= -->
-  <window id="winEditGrupo"
-          title="Editar Grupo"
-          border="normal"
-          width="500px"
-          height="auto"
-          mode="modal"
-          position="center"
-          visible="false"
-          onClose="self.setVisible(false); event.stopPropagation()">
-
-    <grid width="100%">
-      <columns>
-        <column label="Campo" width="150px"/>
-        <column label="Valor"  width="*"/>
-      </columns>
-      <rows>
-        <row>
-          <label value="Nombre"/>
-          <textbox id="txtNombreEditG"
-                   value="@bind(vm.grupoEnEdicion.nombre)"/>
-        </row>
-        <row>
-          <label value="Descripción"/>
-          <textbox id="txtDescEditG"
-                   value="@bind(vm.grupoEnEdicion.descripcionGrupo)"/>
-        </row>
-        <row>
-          <label value="Estado"/>
-          <combobox id="cmbEstadoEditG"
-                    model="@load(vm.listaEstados)"
-                    value="@bind(vm.grupoEnEdicion.estado)"
-                    readonly="true"/>
-        </row>
-      </rows>
-    </grid>
-
-    <hbox width="100%" pack="end" spacing="8px" style="margin-top:8px;">
-      <button id="btnGuardarEditG"
-              class="btnSmall"
-              label="Guardar"
-              image="/imgs/save.png"
-              onClick="@command('guardarEditGrupo')"/>
-      <button label="Cancelar"
-              class="btnSmall"
-              image="/imgs/times.png"
-              onClick="winEditGrupo.onClose()"/>
-    </hbox>
-  </window>
-
 </zk>

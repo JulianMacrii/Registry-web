@@ -4,16 +4,25 @@ package ar.gde.interoperabilidad.registry.zk;
 import org.zkoss.zk.ui.select.SelectorComposer;
 import org.zkoss.zk.ui.select.annotation.Listen;
 import org.zkoss.zk.ui.select.annotation.Wire;
+import org.zkoss.bind.annotation.BindingParam;
+import org.zkoss.bind.annotation.ContextParam;
+import org.zkoss.bind.annotation.ContextType;
+import org.zkoss.bind.annotation.NotifyChange;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.util.Clients;
 import org.zkoss.zk.ui.event.ForwardEvent;
 import org.zkoss.zul.*;
-
+import org.zkoss.bind.annotation.Command;
+import org.zkoss.bind.annotation.NotifyChange;
+import org.zkoss.bind.annotation.ContextParam;
+import org.zkoss.bind.annotation.ContextType;
+import org.zkoss.bind.annotation.BindingParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.client.Entity;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,151 +60,119 @@ public class ABMGrupoComposer extends SelectorComposer<Component> {
 
     // Id del grupo que se está editando
     private Long idGrupoEnEdicion;
-
+    private List<Map<String, Object>> grupos;
+    private Map<String, Object> nuevoGrupo = new HashMap<>();
+    private Map<String, Object> grupoEnEdicion = new HashMap<>();
     // URL base del servicio REST
     private final String BASE_URL = "http://localhost:8080/registry-web/api/v1";
     private final Client jaxClient = ClientBuilder.newClient();
+    private List<String> listaEstados = Arrays.asList("ACTIVO", "INACTIVO");
 
+    public List<Map<String, Object>> getGrupos() {
+        return grupos;
+    }
+
+    public Map<String, Object> getNuevoGrupo() {
+        return nuevoGrupo;
+    }
+
+    public Map<String, Object> getGrupoEnEdicion() {
+        return grupoEnEdicion;
+    }
+    public List<String> getListaEstados() {
+        return listaEstados;
+    }
     @Override
     public void doAfterCompose(Component comp) throws Exception {
         super.doAfterCompose(comp);
-        cargarGrillaGrupos();
+        org.zkoss.zk.ui.select.Selectors.wireComponents(comp, this, false);
+        grupos = jaxClient.target(BASE_URL).path("grupos").request().get(List.class);
+
     }
 
     /**
      * 1) Cargar la grilla con GET /grupos
      */
-    private void cargarGrillaGrupos() {
-        WebTarget t = jaxClient.target(BASE_URL).path("grupos");
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> lista = t.request().get(List.class);
-        gruposModel = new ListModelList<>(lista);
-        gridGrupos.setModel(gruposModel);
+        // --- Abrir Popup Agregar ---
+    @Command
+    @NotifyChange("nuevoGrupo")
+    public void abrirAgregarGrupo(@ContextParam(ContextType.VIEW) Component view) {
+        nuevoGrupo.clear();
+        Window win = (Window) view.getFellow("winAddGrupo");
+        win.setVisible(true);
+        win.doModal();
     }
 
-    /**
-     * 2) Abrir ventana “Agregar Grupo”
-     */
-    @Listen("onClick = button#btnAbrirAddG")
-    public void abrirAgregarGrupo() {
-        // Limpiar campos antes de mostrar
-        txtNombreAddG.setValue("");
-        txtDescAddG.setValue("");
-        cmbEstadoAddG.setValue("");
-        winAddGrupo.doModal();
-    }
-
-    /**
-     * 3) Guardar nuevo grupo → POST /grupos
-     */
-    @Listen("onClick = button#btnGuardarAddG")
-    public void guardarNuevoGrupo() {
-        String nombre = txtNombreAddG.getValue().trim();
-        String descripcion = txtDescAddG.getValue().trim();
-        String estado = cmbEstadoAddG.getValue();
-
-        if (nombre.isEmpty() || estado == null || estado.isEmpty()) {
-            Clients.showNotification("El nombre y estado son obligatorios.", "warning", null, "top_center", 2000);
+    // --- Guardar Nuevo Grupo ---
+    @Command
+    @NotifyChange({"grupos"})
+    public void guardarNuevoGrupo(@ContextParam(ContextType.VIEW) Component view) {
+        if (nuevoGrupo.get("nombre") == null || nuevoGrupo.get("estado") == null) {
+            Messagebox.show("El nombre y estado son obligatorios.", "Advertencia", Messagebox.OK, Messagebox.EXCLAMATION);
             return;
         }
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("nombre", nombre);
-        payload.put("descripcionGrupo", descripcion);
-        payload.put("estado", estado);
-        payload.put("usuarioCreacion", "USUARIO_LOGUEADO");
+        nuevoGrupo.put("usuarioCreacion", "USUARIO_LOGUEADO");
 
         WebTarget t = jaxClient.target(BASE_URL).path("grupos");
-        t.request()
-         .post(Entity.json(payload));
+        t.request().post(Entity.json(nuevoGrupo));
 
-        Clients.showNotification("Grupo creado correctamente.", "success", null, "top_center", 2000);
-        winAddGrupo.onClose();
-        cargarGrillaGrupos();
+        grupos = jaxClient.target(BASE_URL).path("grupos").request().get(List.class);
+
+        Clients.showNotification("Grupo creado correctamente.", "info", null, "top_center", 2000);
+
+        Window win = (Window) view.getFellow("winAddGrupo");
+        win.setVisible(false);
     }
 
-    /**
-     * 4) Dar de baja un grupo → DELETE /grupos/{id}
-     */
-    @Listen("onClick = button#btnBajaG")
-    public void bajaGrupo(ForwardEvent evt) {
-        Row fila = (Row) evt.getOrigin().getTarget().getParent().getParent();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> datos = (Map<String, Object>) fila.getValue();
-        Long idGrupo = ((Number) datos.get("id")).longValue();
-
-        WebTarget t = jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(idGrupo));
-        t.request().delete();
-
-        Clients.showNotification("Grupo dado de baja.", "info", null, "top_center", 2000);
-        cargarGrillaGrupos();
+    // --- Abrir Edición ---
+    @Command
+    @NotifyChange("grupoEnEdicion")
+    public void editarGrupo(@BindingParam("item") Map<String, Object> item,
+                            @ContextParam(ContextType.COMPONENT) Component comp) {
+        grupoEnEdicion = new HashMap<>(item);
+        comp.getPage().getFellow("winEditGrupo").setVisible(true);
     }
 
-    /**
-     * 5) Dar de alta un grupo → POST /grupos/{id}/alta
-     */
-    @Listen("onClick = button#btnAltaG")
-    public void altaGrupo(ForwardEvent evt) {
-        Row fila = (Row) evt.getOrigin().getTarget().getParent().getParent();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> datos = (Map<String, Object>) fila.getValue();
-        Long idGrupo = ((Number) datos.get("id")).longValue();
-
-        WebTarget t = jaxClient.target(BASE_URL)
-                               .path("grupos")
-                               .path(String.valueOf(idGrupo))
-                               .path("alta");
-        t.request()
-         .header("usuario", "USUARIO_LOGUEADO")
-         .post(null);
-
-        Clients.showNotification("Grupo reactivado.", "info", null, "top_center", 2000);
-        cargarGrillaGrupos();
-    }
-
-    /**
-     * 6) Abrir ventana “Editar Grupo” con datos cargados
-     */
-    @Listen("onClick = button#btnEditarG")
-    public void editarGrupo(ForwardEvent evt) {
-        Row fila = (Row) evt.getOrigin().getTarget().getParent().getParent();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> datos = (Map<String, Object>) fila.getValue();
-        idGrupoEnEdicion = ((Number) datos.get("id")).longValue();
-
-        txtNombreEditG.setValue((String) datos.get("nombre"));
-        txtDescEditG.setValue((String) datos.get("descripcionGrupo"));
-        cmbEstadoEditG.setValue((String) datos.get("estado"));
-
-        winEditGrupo.doModal();
-    }
-
-    /**
-     * 7) Guardar cambios edición → PUT /grupos/{id}
-     */
-    @Listen("onClick = button#btnGuardarEditG")
-    public void guardarEditGrupo() {
-        String nombre = txtNombreEditG.getValue().trim();
-        String descripcion = txtDescEditG.getValue().trim();
-        String estado = cmbEstadoEditG.getValue();
-
-        if (nombre.isEmpty() || estado == null || estado.isEmpty()) {
-            Clients.showNotification("El nombre y estado son obligatorios.", "warning", null, "top_center", 2000);
+    // --- Guardar Edición ---
+    @Command
+    @NotifyChange("grupos")
+    public void guardarEditGrupo(@ContextParam(ContextType.COMPONENT) Component comp) {
+        if (grupoEnEdicion.get("nombre") == null || grupoEnEdicion.get("estado") == null) {
+            Messagebox.show("El nombre y estado son obligatorios.", "Advertencia", Messagebox.OK, Messagebox.EXCLAMATION);
             return;
         }
 
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("id", idGrupoEnEdicion);
-        payload.put("nombre", nombre);
-        payload.put("descripcionGrupo", descripcion);
-        payload.put("estado", estado);
-        payload.put("usuarioModificacion", "USUARIO_LOGUEADO");
+        grupoEnEdicion.put("usuarioModificacion", "USUARIO_LOGUEADO");
+        Long id = ((Number) grupoEnEdicion.get("id")).longValue();
+        WebTarget t = jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(id));
+        t.request().put(Entity.json(grupoEnEdicion));
 
-        WebTarget t = jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(idGrupoEnEdicion));
-        t.request().put(Entity.json(payload));
-
+        grupos = jaxClient.target(BASE_URL).path("grupos").request().get(List.class);
         Clients.showNotification("Datos actualizados.", "success", null, "top_center", 2000);
-        winEditGrupo.onClose();
-        cargarGrillaGrupos();
+        comp.getPage().getFellow("winEditGrupo").setVisible(false);
     }
+
+    // --- Dar de baja ---
+    @Command
+    @NotifyChange("grupos")
+    public void bajaGrupo(@BindingParam("item") Map<String, Object> item) {
+        Long id = ((Number) item.get("id")).longValue();
+        jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(id)).request().delete();
+        grupos = jaxClient.target(BASE_URL).path("grupos").request().get(List.class);
+        Clients.showNotification("Grupo dado de baja.", "info", null, "top_center", 2000);
+    }
+
+    // --- Dar de alta ---
+    @Command
+    @NotifyChange("grupos")
+    public void altaGrupo(@BindingParam("item") Map<String, Object> item) {
+        Long id = ((Number) item.get("id")).longValue();
+        jaxClient.target(BASE_URL).path("grupos").path(String.valueOf(id)).path("alta")
+                .request().header("usuario", "USUARIO_LOGUEADO").post(null);
+        grupos = jaxClient.target(BASE_URL).path("grupos").request().get(List.class);
+        Clients.showNotification("Grupo reactivado.", "info", null, "top_center", 2000);
+    }
+
+    
 }
